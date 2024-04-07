@@ -10,6 +10,7 @@ import lustre/event
 import gleam/result
 import gleam/list
 import gleam/float
+import lustre/ui/layout/cluster
 
 const steps = 16
 
@@ -19,138 +20,193 @@ pub fn main() {
 }
 
 // MODEL ----------------------------------------------------------------------
-pub type Model {
+pub opaque type Model {
   Model(actual: Rgb, current_guess: Rgb, guesses: List(Rgb))
 }
 
-pub opaque type Rgb {
-  Rgb(red: Int, green: Int, blue: Int)
+type Rgb {
+  Rgb(red: ColorValue, green: ColorValue, blue: ColorValue)
+}
+
+type ColorValue {
+  ColorValue(value: Int)
+}
+
+fn to_base16_string(color: ColorValue) {
+  int.to_base16(color.value)
+}
+
+fn to_float(color: ColorValue) -> Float {
+  int.to_float(color.value)
 }
 
 fn init(_) -> #(Model, effect.Effect(Msg)) {
   #(
-    Model(actual: random_rgb(), guesses: [], current_guess: Rgb(8, 8, 8)),
+    Model(
+      actual: random_rgb(),
+      guesses: [],
+      current_guess: Rgb(ColorValue(8), ColorValue(8), ColorValue(8)),
+    ),
     effect.none(),
   )
 }
 
 fn random_rgb() -> Rgb {
-  let random_16 = fn() { random(steps) }
+  let random_16 = fn() { ColorValue(random(steps)) }
   Rgb(red: random_16(), green: random_16(), blue: random_16())
 }
 
 // VIEW -----------------------------------------------------------------------
 
 fn view(model: Model) -> Element(Msg) {
-  let red = int.to_base16(model.actual.red)
-  let green = int.to_base16(model.actual.green)
-  let blue = int.to_base16(model.actual.blue)
-
-  let current_red = int.to_base16(model.current_guess.red)
-  let current_green = int.to_base16(model.current_guess.green)
-  let current_blue = int.to_base16(model.current_guess.blue)
-
   html.body(
     [
       attribute.style([
-        #("background", "#" <> red <> green <> blue),
+        #("background", view_rgb(model.actual)),
         #("height", "100vh"),
+        #("min-height", "100vh"),
+        #("margin", "0"),
+        #("padding", "0"),
       ]),
     ],
     [
+      html.a([attribute.href("https://susam.net/myrgb.html")], [
+        html.text("Original"),
+      ]),
+      html.text(", "),
+      html.a([attribute.href("https://github.com/george-grec/rgbeam")], [
+        html.text("Github"),
+      ]),
+      ui.centre(
+        [],
+        ui.prose([], [
+          html.h1(
+            [
+              attribute.style([
+                #("text-align", "center"),
+                #("background-color", "#DDD"),
+              ]),
+            ],
+            [html.text("Guess this RGB!")],
+          ),
+        ]),
+      ),
       ui.centre(
         [],
         ui.stack([], [
-          ui.input([
-            attribute.type_("range"),
-            attribute.min("0"),
-            attribute.max("16"),
-            attribute.value(int.to_string(model.current_guess.red)),
-            attribute.step("1"),
-            event.on_input(UserChangedRed),
-          ]),
-          ui.input([
-            attribute.type_("range"),
-            attribute.min("0"),
-            attribute.max("16"),
-            attribute.value(int.to_string(model.current_guess.green)),
-            attribute.step("1"),
-            event.on_input(UserChangedGreen),
-          ]),
-          html.input([
-            attribute.type_("range"),
-            attribute.min("0"),
-            attribute.max("16"),
-            attribute.value(int.to_string(model.current_guess.blue)),
-            attribute.step("1"),
-            event.on_input(UserChangedBlue),
-          ]),
-          ui.button(
-            [
-              event.on_click(UserGuessed),
-              attribute.style([
-                #(
-                  "background",
-                  "#" <> current_red <> current_green <> current_blue,
-                ),
-              ]),
-            ],
-            [element.text("Submit")],
+          ui.cluster([cluster.loose()], {
+            list.range(0, 15)
+            |> list.map(int.to_base16)
+            |> list.map(fn(x) { html.span([], [html.text(x)]) })
+          }),
+          view_slider(
+            model.current_guess.red,
+            UserChangedRed,
+            view_rgb(Rgb(model.current_guess.red, ColorValue(0), ColorValue(0))),
           ),
-          ui.prose([], [
-            html.text(
-              "Accuracy: "
-              <> {
-                int.to_string(
-                  float.truncate(view_current_percent(
-                    model.current_guess,
-                    model.actual,
-                  )),
-                )
-              }
-              <> "%",
-            ),
+          view_slider(
+            model.current_guess.green,
+            UserChangedGreen,
+            view_rgb(Rgb(
+              ColorValue(0),
+              model.current_guess.green,
+              ColorValue(0),
+            )),
+          ),
+          view_slider(
+            model.current_guess.blue,
+            UserChangedBlue,
+            view_rgb(Rgb(ColorValue(0), ColorValue(0), model.current_guess.blue)),
+          ),
+        ]),
+      ),
+      ui.centre(
+        [],
+        ui.stack([], [
+          ui.button([event.on_click(UserGuessed)], [
+            element.text("Submit " <> view_rgb(model.current_guess)),
           ]),
-          ui.stack([], list.map(model.guesses, view_guess)),
+          ui.stack(
+            [],
+            list.zip(model.guesses, list.range(list.length(model.guesses), 1))
+              |> list.map(view_guess(_, model.actual)),
+          ),
         ]),
       ),
     ],
   )
 }
 
-fn view_current_percent(current: Rgb, actual: Rgb) {
-  let abs_red = int.absolute_value(actual.red - current.red)
-  let abs_green = int.absolute_value(actual.green - current.green)
-  let abs_blue = int.absolute_value(actual.blue - current.blue)
+fn view_slider(
+  color: ColorValue,
+  on_input: fn(String) -> Msg,
+  accent_color: String,
+) -> Element(Msg) {
+  ui.input([
+    attribute.type_("range"),
+    attribute.min("0"),
+    attribute.max("15"),
+    attribute.width(50),
+    attribute.value(int.to_string(color.value)),
+    attribute.step("1"),
+    attribute.style([#("accent-color", accent_color)]),
+    event.on_input(on_input),
+  ])
+}
+
+fn view_current_percent(current: Rgb, actual: Rgb) -> Int {
+  let abs_red =
+    float.absolute_value(to_float(actual.red) -. to_float(current.red))
+  let abs_green =
+    float.absolute_value(to_float(actual.green) -. to_float(current.green))
+  let abs_blue =
+    float.absolute_value(to_float(actual.blue) -. to_float(current.blue))
   {
-    { { 16.0 -. int.to_float(abs_red) } /. 16.0 }
-    +. { { 16.0 -. int.to_float(abs_green) } /. 16.0 }
-    +. { { 16.0 -. int.to_float(abs_blue) } /. 16.0 }
+    { { 16.0 -. abs_red } /. 16.0 }
+    +. { { 16.0 -. abs_green } /. 16.0 }
+    +. { { 16.0 -. abs_blue } /. 16.0 }
   }
   /. 3.0
   *. 100.0
+  |> float.truncate
 }
 
-fn view_guess(color: Rgb) -> Element(Msg) {
-  let red = int.to_base16(color.red)
-  let green = int.to_base16(color.green)
-  let blue = int.to_base16(color.blue)
+fn view_guess(guess_with_count: #(Rgb, Int), actual: Rgb) -> Element(Msg) {
+  let #(guess, index) = guess_with_count
+  let rgb_display = view_rgb(guess)
 
-  ui.prose(
-    [
-      attribute.style([
-        #("background-color", "#" <> red <> ", " <> green <> ", " <> blue),
-      ]),
-    ],
-    [
+  ui.cluster([cluster.stretch(), cluster.align_centre()], [
+    ui.box([attribute.style([#("background-color", "#DDD")])], [
+      html.text(int.to_string(index) <> ") "),
+      html.text(rgb_display <> " "),
       html.text(
-        "#"
-        <> int.to_base16(color.red)
-        <> int.to_base16(color.green)
-        <> int.to_base16(color.blue),
+        "(Accuracy: "
+        <> { int.to_string(view_current_percent(guess, actual)) }
+        <> "%)",
       ),
-    ],
-  )
+    ]),
+    ui.box(
+      [
+        attribute.style([#("background-color", rgb_display)]),
+        attribute.width(50),
+      ],
+      potential_win(guess, actual),
+    ),
+  ])
+}
+
+fn potential_win(guess: Rgb, actual: Rgb) -> List(Element(Msg)) {
+  case guess == actual {
+    False -> []
+    True -> [html.text("Perfect match!")]
+  }
+}
+
+fn view_rgb(color: Rgb) {
+  "#"
+  <> to_base16_string(color.red)
+  <> to_base16_string(color.green)
+  <> to_base16_string(color.blue)
 }
 
 // UPDATE ----------------------------------------------------------------------
@@ -164,38 +220,36 @@ pub opaque type Msg {
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   let return = case msg {
-    UserChangedRed(guessed) -> #(
-      Model(
-        ..model,
-        current_guess: Rgb(
-          ..model.current_guess,
-          red: result.unwrap(int.parse(guessed), model.current_guess.red),
-        ),
-      ),
-      effect.none(),
-    )
+    UserChangedRed(new_color) -> {
+      let new_red = parse_color(new_color, fallback: model.current_guess.red)
+      #(
+        Model(..model, current_guess: Rgb(..model.current_guess, red: new_red)),
+        effect.none(),
+      )
+    }
 
-    UserChangedGreen(guessed) -> #(
-      Model(
-        ..model,
-        current_guess: Rgb(
-          ..model.current_guess,
-          green: result.unwrap(int.parse(guessed), model.current_guess.green),
+    UserChangedGreen(new_color) -> {
+      let new_green =
+        parse_color(new_color, fallback: model.current_guess.green)
+      #(
+        Model(
+          ..model,
+          current_guess: Rgb(..model.current_guess, green: new_green),
         ),
-      ),
-      effect.none(),
-    )
+        effect.none(),
+      )
+    }
 
-    UserChangedBlue(guessed) -> #(
-      Model(
-        ..model,
-        current_guess: Rgb(
-          ..model.current_guess,
-          blue: result.unwrap(int.parse(guessed), model.current_guess.blue),
+    UserChangedBlue(new_color) -> {
+      let new_blue = parse_color(new_color, fallback: model.current_guess.blue)
+      #(
+        Model(
+          ..model,
+          current_guess: Rgb(..model.current_guess, blue: new_blue),
         ),
-      ),
-      effect.none(),
-    )
+        effect.none(),
+      )
+    }
 
     UserGuessed -> #(
       Model(..model, guesses: [model.current_guess, ..model.guesses]),
@@ -206,4 +260,10 @@ fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
   io.debug(return.0)
 
   return
+}
+
+fn parse_color(raw_value: String, fallback fallback: ColorValue) -> ColorValue {
+  int.parse(raw_value)
+  |> result.map({ ColorValue(_) })
+  |> result.unwrap(fallback)
 }
