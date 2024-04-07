@@ -1,5 +1,6 @@
 name = "rgbeam"
 version = "1.0.0"
+target = "javascript"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
 # your project to the Hex package manager.
@@ -17,6 +18,7 @@ gleam_stdlib = "~> 0.34 or ~> 1.0"
 lustre = "~> 4.1"
 lustre_dev_tools = "~> 1.1"
 lustre_ui = "~> 0.6"
+esgleam = "~> 0.6"
 
 [dev-dependencies]
 gleeunit = "~> 1.0"

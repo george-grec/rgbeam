@@ -1,25 +1,15 @@
 # rgbeam
+This is an uglier version of [Guess my RGB](https://susam.net/myrgb.html) by Susam Pal. I made it to learn more about Gleam and Lustre.
 
-[![Package Version](https://img.shields.io/hexpm/v/rgbeam)](https://hex.pm/packages/rgbeam)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/rgbeam/)
-
-```sh
-gleam add rgbeam
-```
-```gleam
-import rgbeam
-
-pub fn main() {
-  // TODO: An example of the project in use
-}
-```
-
-Further documentation can be found at <https://hexdocs.pm/rgbeam>.
 
 ## Development
 
 ```sh
-gleam run   # Run the project
-gleam test  # Run the tests
-gleam shell # Run an Erlang shell
+gleam build
+gleam run -m lustre/dev start --use-example-styles # Run the project
+```
+
+## Bundle
+```sh
+gleam run -m esgleam/bundle
 ```

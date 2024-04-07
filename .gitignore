@@ -2,3 +2,8 @@
 *.ez
 /build
 erl_crash.dump
+
+/dist/*
+
+!dist/lustre-ui.css
+!dist/index.html
