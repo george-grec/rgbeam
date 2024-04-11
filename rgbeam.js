@@ -1736,6 +1736,7 @@ function createElementNode({ prev, next, dispatch, stack: stack3 }) {
       el2.removeAttribute(attr);
     }
     for (const eventName of prevHandlers) {
+      handlersForEl.delete(eventName);
       el2.removeEventListener(eventName, lustreGenericEventHandler);
     }
   }
@@ -1750,7 +1751,7 @@ function createElementNode({ prev, next, dispatch, stack: stack3 }) {
   let keyedChildren = null;
   let incomingKeyedChildren = null;
   let firstChild = next.children[Symbol.iterator]().next().value;
-  if (firstChild !== void 0 && // Explicit checks are more verbose but truthy checks force a bunch of comparisons
+  if (canMorph && firstChild !== void 0 && // Explicit checks are more verbose but truthy checks force a bunch of comparisons
   // we don't care about: it's never gonna be a number etc.
   firstChild.key !== void 0 && firstChild.key !== "") {
     seenKeys = /* @__PURE__ */ new Set();
@@ -2465,7 +2466,7 @@ function init(_) {
 }
 function main() {
   let app = application(init, update, view);
-  let $ = start2(app, "#app", void 0);
+  let $ = start2(app, "body", void 0);
   if (!$.isOk()) {
     throw makeError(
       "assignment_no_match",
