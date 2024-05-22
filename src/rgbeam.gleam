@@ -1,18 +1,15 @@
-import lustre
-import lustre/effect.{type Effect}
+import gleam/float
 import gleam/int.{random}
+import gleam/list
+import gleam/result
+import gleam_community/colour.{type Color}
+import gleam_community/colour/accessibility
+import lustre
+import lustre/attribute
+import lustre/effect.{type Effect}
 import lustre/element.{type Element}
 import lustre/element/html
-import lustre/attribute
-import lustre/ui
-import gleam/io
 import lustre/event
-import gleam/result
-import gleam/list
-import gleam/float
-import lustre/ui/layout/cluster
-
-const steps = 16
 
 pub fn main() {
   let app = lustre.application(init, update, view)
@@ -21,39 +18,42 @@ pub fn main() {
 
 // MODEL ----------------------------------------------------------------------
 pub opaque type Model {
-  Model(actual: Rgb, current_guess: Rgb, guesses: List(Rgb))
+  Model(actual: Color, current_guess: Color, guesses: List(Color))
 }
 
-type Rgb {
-  Rgb(red: ColorValue, green: ColorValue, blue: ColorValue)
-}
-
-type ColorValue {
-  ColorValue(value: Int)
-}
-
-fn to_base16_string(color: ColorValue) {
-  int.to_base16(color.value)
-}
-
-fn to_float(color: ColorValue) -> Float {
-  int.to_float(color.value)
+type BasicColor {
+  Red
+  Green
+  Blue
 }
 
 fn init(_) -> #(Model, effect.Effect(Msg)) {
   #(
     Model(
-      actual: random_rgb(),
+      actual: random_color(),
       guesses: [],
-      current_guess: Rgb(ColorValue(8), ColorValue(8), ColorValue(8)),
+      current_guess: force_color_from_rgb255(8 * 16, 8 * 16, 8 * 16),
     ),
     effect.none(),
   )
 }
 
-fn random_rgb() -> Rgb {
-  let random_16 = fn() { ColorValue(random(steps)) }
-  Rgb(red: random_16(), green: random_16(), blue: random_16())
+fn force_color_from_rgb255(red: Int, green: Int, blue: Int) -> Color {
+  let assert Ok(color) = colour.from_rgb255(red, green, blue)
+  color
+}
+
+fn random_color() -> Color {
+  let random_color_255 = fn() {
+    let rand = random(16)
+    rand * 16 + rand
+  }
+
+  force_color_from_rgb255(
+    random_color_255(),
+    random_color_255(),
+    random_color_255(),
+  )
 }
 
 // VIEW -----------------------------------------------------------------------
@@ -61,131 +61,181 @@ fn random_rgb() -> Rgb {
 fn view(model: Model) -> Element(Msg) {
   html.body(
     [
-      attribute.style([
-        #("background", view_rgb(model.actual)),
-        #("height", "100vh"),
-        #("min-height", "100vh"),
-        #("margin", "0"),
-        #("padding", "0"),
-      ]),
+      attribute.style([#("background", view_color(model.actual))]),
+      attribute.class(
+        "flex flex-col items-center justify-start m-0 p-0 h-screen min-h-screen",
+      ),
     ],
     [
-      html.a([attribute.href("https://susam.net/myrgb.html")], [
-        html.text("Original"),
-      ]),
-      html.text(", "),
-      html.a([attribute.href("https://github.com/george-grec/rgbeam")], [
-        html.text("Github"),
-      ]),
-      ui.centre(
-        [],
-        ui.prose([], [
-          html.h1(
-            [
-              attribute.style([
-                #("text-align", "center"),
-                #("background-color", "#DDD"),
-              ]),
-            ],
-            [html.text("Guess this RGB!")],
-          ),
-        ]),
+      view_title(model.actual),
+      view_slider_component(model),
+      view_submit_button(model.current_guess),
+      view_guesses(model),
+    ],
+  )
+}
+
+fn view_title(actual: Color) {
+  html.h1(
+    [
+      attribute.class(
+        text_class_for_background(actual)
+        <> " text-4xl font-bold text-center mt-[20%] mg-5",
       ),
-      ui.centre(
-        [],
-        ui.stack([], [
-          ui.cluster([cluster.loose()], {
-            list.range(0, 15)
-            |> list.map(int.to_base16)
-            |> list.map(fn(x) { html.span([], [html.text(x)]) })
-          }),
-          view_slider(
-            model.current_guess.red,
-            UserChangedRed,
-            view_rgb(Rgb(model.current_guess.red, ColorValue(0), ColorValue(0))),
-          ),
-          view_slider(
-            model.current_guess.green,
-            UserChangedGreen,
-            view_rgb(Rgb(
-              ColorValue(0),
-              model.current_guess.green,
-              ColorValue(0),
-            )),
-          ),
-          view_slider(
-            model.current_guess.blue,
-            UserChangedBlue,
-            view_rgb(Rgb(ColorValue(0), ColorValue(0), model.current_guess.blue)),
-          ),
-        ]),
+    ],
+    [
+      html.text("Guess this "),
+      html.span([attribute.class("rgb text-4xl font-bold")], [html.text("RGB")]),
+      html.text("!"),
+    ],
+  )
+}
+
+fn view_navbar() {
+  [
+    html.a([attribute.href("https://susam.net/myrgb.html")], [
+      html.text("Original"),
+    ]),
+    html.text(", "),
+    html.a([attribute.href("https://github.com/george-grec/rgbeam")], [
+      html.text("Github"),
+    ]),
+  ]
+}
+
+fn view_slider_component(model: Model) -> Element(Msg) {
+  html.div(
+    [
+      attribute.class(
+        "flex flex-col align-center justify-center min-w-full p-10 lg:min-w-[50%]",
       ),
-      ui.centre(
-        [],
-        ui.stack([], [
-          ui.button([event.on_click(UserGuessed)], [
-            element.text("Submit " <> view_rgb(model.current_guess)),
-          ]),
-          ui.stack(
-            [],
-            list.zip(model.guesses, list.range(list.length(model.guesses), 1))
-              |> list.map(view_guess(_, model.actual)),
-          ),
-        ]),
+    ],
+    [
+      view_slider(
+        get_color_rgb16(model.current_guess, Red),
+        UserChangedColor(_, Red),
+        view_basic_color(model.current_guess, Red),
+      ),
+      view_slider(
+        get_color_rgb16(model.current_guess, Green),
+        UserChangedColor(_, Green),
+        view_basic_color(model.current_guess, Green),
+      ),
+      view_slider(
+        get_color_rgb16(model.current_guess, Blue),
+        UserChangedColor(_, Blue),
+        view_basic_color(model.current_guess, Blue),
       ),
     ],
   )
 }
 
 fn view_slider(
-  color: ColorValue,
+  color_value: Int,
   on_input: fn(String) -> Msg,
   accent_color: String,
 ) -> Element(Msg) {
-  ui.input([
+  html.input([
     attribute.type_("range"),
     attribute.min("0"),
     attribute.max("15"),
     attribute.width(50),
-    attribute.value(int.to_string(color.value)),
+    attribute.value(int.to_string(color_value)),
     attribute.step("1"),
     attribute.style([#("accent-color", accent_color)]),
+    attribute.class("m-2 shrink-0 text-center"),
     event.on_input(on_input),
   ])
 }
 
-fn view_current_percent(current: Rgb, actual: Rgb) -> Int {
-  let abs_red =
-    float.absolute_value(to_float(actual.red) -. to_float(current.red))
-  let abs_green =
-    float.absolute_value(to_float(actual.green) -. to_float(current.green))
-  let abs_blue =
-    float.absolute_value(to_float(actual.blue) -. to_float(current.blue))
+fn view_basic_color(color: Color, basic_color: BasicColor) -> String {
+  let #(r, g, b, a) = colour.to_rgba(color)
+  let assert Ok(new_color) = case basic_color {
+    Red -> colour.from_rgba(r, 0.0, 0.0, a)
+    Green -> colour.from_rgba(0.0, g, 0.0, a)
+    Blue -> colour.from_rgba(0.0, 0.0, b, a)
+  }
+
+  view_color(new_color)
+}
+
+/// returns the color as a string to be displayed to the user
+///
+/// Example: "#FFF"
+fn view_color(color: Color) -> String {
+  let red16 = get_color_rgb16(color, Red)
+  let green16 = get_color_rgb16(color, Green)
+  let blue16 = get_color_rgb16(color, Blue)
+
+  "#" <> int.to_base16(red16) <> int.to_base16(green16) <> int.to_base16(blue16)
+}
+
+fn view_submit_button(current_guess: Color) {
+  html.button(
+    [
+      attribute.class(
+        "
+        text-white text-center m-5 p-5 b-0 block rounded-lg bg-[length:auto_200%] bg-left
+        bg-gradient-to-r from-sky-950 to-cyan-600 duration-500 hover:bg-right
+        hover:bg-gray hover:no-underline min-w-80",
+      ),
+      event.on_click(UserGuessed),
+    ],
+    [element.text("Submit " <> view_color(current_guess))],
+  )
+}
+
+fn view_guesses(model: Model) {
+  html.div(
+    [],
+    list.zip(model.guesses, list.range(list.length(model.guesses), 1))
+      |> list.map(view_guess(_, model.actual)),
+  )
+}
+
+fn view_slider_label() {
+  html.div([], {
+    list.range(0, 15)
+    |> list.map(int.to_base16)
+    |> list.map(fn(x) { html.span([], [html.text(x)]) })
+  })
+}
+
+fn view_current_percent(current: Color, actual: Color) -> Int {
+  let abs_difference = fn(base_color) {
+    {
+      get_color_float(current, base_color)
+      -. get_color_float(actual, base_color)
+    }
+    |> float.absolute_value
+  }
+
+  let abs_red = abs_difference(Red)
+  let abs_green = abs_difference(Green)
+  let abs_blue = abs_difference(Blue)
   {
-    { { 16.0 -. abs_red } /. 16.0 }
-    +. { { 16.0 -. abs_green } /. 16.0 }
-    +. { { 16.0 -. abs_blue } /. 16.0 }
+    { { 1.0 -. abs_red } /. 1.0 }
+    +. { { 1.0 -. abs_green } /. 1.0 }
+    +. { { 1.0 -. abs_blue } /. 1.0 }
   }
   /. 3.0
   *. 100.0
-  |> float.truncate
+  |> float.round
 }
 
-fn view_guess(guess_with_count: #(Rgb, Int), actual: Rgb) -> Element(Msg) {
+fn view_guess(guess_with_count: #(Color, Int), actual: Color) -> Element(Msg) {
   let #(guess, index) = guess_with_count
-  let rgb_display = view_rgb(guess)
+  let rgb_display = view_color(guess)
 
-  ui.cluster([cluster.stretch(), cluster.align_centre()], [
-    ui.box([attribute.style([#("background-color", "#DDD")])], [
-      html.text(int.to_string(index) <> ") "),
-      html.text(rgb_display <> " "),
-      html.text(
-        "(Accuracy: "
-        <> { int.to_string(view_current_percent(guess, actual)) }
-        <> "%)",
-      ),
-    ]),
-    ui.box(
+  html.div([], [
+    html.text(int.to_string(index) <> ") "),
+    html.text(rgb_display <> " "),
+    html.text(
+      "(Accuracy: "
+      <> { int.to_string(view_current_percent(guess, actual)) }
+      <> "%)",
+    ),
+    html.div(
       [
         attribute.style([#("background-color", rgb_display)]),
         attribute.width(50),
@@ -195,75 +245,77 @@ fn view_guess(guess_with_count: #(Rgb, Int), actual: Rgb) -> Element(Msg) {
   ])
 }
 
-fn potential_win(guess: Rgb, actual: Rgb) -> List(Element(Msg)) {
+fn potential_win(guess: Color, actual: Color) -> List(Element(Msg)) {
   case guess == actual {
     False -> []
     True -> [html.text("Perfect match!")]
   }
 }
 
-fn view_rgb(color: Rgb) {
-  "#"
-  <> to_base16_string(color.red)
-  <> to_base16_string(color.green)
-  <> to_base16_string(color.blue)
+/// get the float value (between 0.0 and 1.0) for either R, G or B
+fn get_color_float(color: Color, basic_color: BasicColor) -> Float {
+  let #(red, green, blue, _) = colour.to_rgba(color)
+
+  case basic_color {
+    Red -> red
+    Green -> green
+    Blue -> blue
+  }
+}
+
+/// get the int value (between 0 and 15) for either R, G or B
+fn get_color_rgb16(color: Color, basic_color: BasicColor) -> Int {
+  float.truncate(get_color_float(color, basic_color) *. 15.0)
+}
+
+fn text_class_for_background(color: Color) -> String {
+  let assert Ok(dark_text_color) = colour.from_rgb(1.0, 1.0, 1.0)
+  case accessibility.contrast_ratio(color, dark_text_color) >. 4.5 {
+    True -> "text-white"
+    False -> "text-black"
+  }
 }
 
 // UPDATE ----------------------------------------------------------------------
 
 pub opaque type Msg {
   UserGuessed
-  UserChangedRed(String)
-  UserChangedGreen(String)
-  UserChangedBlue(String)
+  UserChangedColor(String, BasicColor)
 }
 
 fn update(model: Model, msg: Msg) -> #(Model, Effect(Msg)) {
-  let return = case msg {
-    UserChangedRed(new_color) -> {
-      let new_red = parse_color(new_color, fallback: model.current_guess.red)
-      #(
-        Model(..model, current_guess: Rgb(..model.current_guess, red: new_red)),
-        effect.none(),
-      )
-    }
-
-    UserChangedGreen(new_color) -> {
-      let new_green =
-        parse_color(new_color, fallback: model.current_guess.green)
-      #(
-        Model(
-          ..model,
-          current_guess: Rgb(..model.current_guess, green: new_green),
-        ),
-        effect.none(),
-      )
-    }
-
-    UserChangedBlue(new_color) -> {
-      let new_blue = parse_color(new_color, fallback: model.current_guess.blue)
-      #(
-        Model(
-          ..model,
-          current_guess: Rgb(..model.current_guess, blue: new_blue),
-        ),
-        effect.none(),
-      )
-    }
+  case msg {
+    UserChangedColor(new_color, color_type) -> #(
+      Model(
+        ..model,
+        current_guess: parse_color(new_color, color_type, model.current_guess),
+      ),
+      effect.none(),
+    )
 
     UserGuessed -> #(
       Model(..model, guesses: [model.current_guess, ..model.guesses]),
       effect.none(),
     )
   }
-
-  io.debug(return.0)
-
-  return
 }
 
-fn parse_color(raw_value: String, fallback fallback: ColorValue) -> ColorValue {
+fn parse_color(
+  raw_value: String,
+  basic_color: BasicColor,
+  fallback current_color: Color,
+) -> Color {
   int.parse(raw_value)
-  |> result.map({ ColorValue(_) })
-  |> result.unwrap(fallback)
+  |> result.map(fn(rgb16) {
+    let parsed_color_value = int.to_float(rgb16) /. 15.0
+
+    let #(r, g, b, a) = colour.to_rgba(current_color)
+    let assert Ok(new_color) = case basic_color {
+      Red -> colour.from_rgba(parsed_color_value, g, b, a)
+      Green -> colour.from_rgba(r, parsed_color_value, b, a)
+      Blue -> colour.from_rgba(r, g, parsed_color_value, a)
+    }
+    new_color
+  })
+  |> result.unwrap(current_color)
 }

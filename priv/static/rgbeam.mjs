@@ -10,7 +10,10 @@ var CustomType = class {
 var List = class {
   static fromArray(array, tail) {
     let t = tail || new Empty();
-    return array.reduceRight((xs, x) => new NonEmpty(x, xs), t);
+    for (let i = array.length - 1; i >= 0; --i) {
+      t = new NonEmpty(array[i], t);
+    }
+    return t;
   }
   [Symbol.iterator]() {
     return new ListIterator(this);
@@ -43,6 +46,9 @@ var List = class {
     return length3;
   }
 };
+function prepend(element2, tail) {
+  return new NonEmpty(element2, tail);
+}
 function toList(elements, tail) {
   return List.fromArray(elements, tail);
 }
@@ -100,11 +106,6 @@ var BitArray = class _BitArray {
   // @internal
   sliceAfter(index2) {
     return new _BitArray(this.buffer.slice(index2));
-  }
-};
-var UtfCodepoint = class {
-  constructor(value3) {
-    this.value = value3;
   }
 };
 function byteArrayToInt(byteArray) {
@@ -228,14 +229,6 @@ function makeError(variant, module, line, fn, message, extra) {
   return error;
 }
 
-// build/dev/javascript/gleam_stdlib/gleam/order.mjs
-var Lt = class extends CustomType {
-};
-var Eq = class extends CustomType {
-};
-var Gt = class extends CustomType {
-};
-
 // build/dev/javascript/gleam_stdlib/gleam/option.mjs
 var Some = class extends CustomType {
   constructor(x0) {
@@ -251,6 +244,64 @@ function to_result(option, e) {
     return new Ok(a2);
   } else {
     return new Error(e);
+  }
+}
+
+// build/dev/javascript/gleam_stdlib/gleam/order.mjs
+var Lt = class extends CustomType {
+};
+var Eq = class extends CustomType {
+};
+var Gt = class extends CustomType {
+};
+
+// build/dev/javascript/gleam_stdlib/gleam/float.mjs
+function ceiling2(x) {
+  return ceiling(x);
+}
+function floor2(x) {
+  return floor(x);
+}
+function truncate2(x) {
+  return truncate(x);
+}
+function absolute_value(x) {
+  let $ = x >= 0;
+  if ($) {
+    return x;
+  } else {
+    return 0 - x;
+  }
+}
+function power2(base, exponent) {
+  let fractional = ceiling2(exponent) - exponent > 0;
+  let $ = base < 0 && fractional || base === 0 && exponent < 0;
+  if ($) {
+    return new Error(void 0);
+  } else {
+    return new Ok(power(base, exponent));
+  }
+}
+function negate(x) {
+  return -1 * x;
+}
+function do_round(x) {
+  let $ = x >= 0;
+  if ($) {
+    return round(x);
+  } else {
+    return 0 - round(negate(x));
+  }
+}
+function round2(x) {
+  return do_round(x);
+}
+function divide(a2, b) {
+  if (b === 0) {
+    return new Error(void 0);
+  } else {
+    let b$1 = b;
+    return new Ok(divideFloat(a2, b$1));
   }
 }
 
@@ -280,14 +331,14 @@ function compare(a2, b) {
     }
   }
 }
-function random(max2) {
-  let _pipe = random_uniform() * to_float(max2);
-  let _pipe$1 = floor(_pipe);
-  return round(_pipe$1);
+function random(max3) {
+  let _pipe = random_uniform() * to_float(max3);
+  let _pipe$1 = floor2(_pipe);
+  return round2(_pipe$1);
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/list.mjs
-function do_length_acc(loop$list, loop$count) {
+function count_length(loop$list, loop$count) {
   while (true) {
     let list = loop$list;
     let count = loop$count;
@@ -300,13 +351,10 @@ function do_length_acc(loop$list, loop$count) {
     }
   }
 }
-function do_length(list) {
-  return do_length_acc(list, 0);
-}
 function length(list) {
-  return do_length(list);
+  return count_length(list, 0);
 }
-function do_reverse_acc(loop$remaining, loop$accumulator) {
+function do_reverse(loop$remaining, loop$accumulator) {
   while (true) {
     let remaining = loop$remaining;
     let accumulator = loop$accumulator;
@@ -316,15 +364,12 @@ function do_reverse_acc(loop$remaining, loop$accumulator) {
       let item = remaining.head;
       let rest$1 = remaining.tail;
       loop$remaining = rest$1;
-      loop$accumulator = toList([item], accumulator);
+      loop$accumulator = prepend(item, accumulator);
     }
   }
 }
-function do_reverse(list) {
-  return do_reverse_acc(list, toList([]));
-}
 function reverse(xs) {
-  return do_reverse(xs);
+  return do_reverse(xs, toList([]));
 }
 function do_map(loop$list, loop$fun, loop$acc) {
   while (true) {
@@ -338,7 +383,7 @@ function do_map(loop$list, loop$fun, loop$acc) {
       let xs = list.tail;
       loop$list = xs;
       loop$fun = fun;
-      loop$acc = toList([fun(x)], acc);
+      loop$acc = prepend(fun(x), acc);
     }
   }
 }
@@ -373,7 +418,7 @@ function do_zip(loop$xs, loop$ys, loop$acc) {
       let ys$1 = ys.tail;
       loop$xs = xs$1;
       loop$ys = ys$1;
-      loop$acc = toList([[x, y]], acc);
+      loop$acc = prepend([x, y], acc);
     } else {
       return reverse(acc);
     }
@@ -389,15 +434,15 @@ function tail_recursive_range(loop$start, loop$stop, loop$acc) {
     let acc = loop$acc;
     let $ = compare(start3, stop);
     if ($ instanceof Eq) {
-      return toList([stop], acc);
+      return prepend(stop, acc);
     } else if ($ instanceof Gt) {
       loop$start = start3;
       loop$stop = stop + 1;
-      loop$acc = toList([stop], acc);
+      loop$acc = prepend(stop, acc);
     } else {
       loop$start = start3;
       loop$stop = stop - 1;
-      loop$acc = toList([stop], acc);
+      loop$acc = prepend(stop, acc);
     }
   }
 }
@@ -432,6 +477,9 @@ function try$(result, fun) {
     let e = result[0];
     return new Error(e);
   }
+}
+function then$(result, fun) {
+  return try$(result, fun);
 }
 function unwrap(result, default$) {
   if (result.isOk()) {
@@ -508,7 +556,7 @@ function push_path(error, name) {
       return to_string3(_pipe$1);
     }
   })();
-  return error.withFields({ path: toList([name$2], error.path) });
+  return error.withFields({ path: prepend(name$2, error.path) });
 }
 function map_errors(result, f) {
   return map_error(
@@ -1227,11 +1275,11 @@ var Dict = class _Dict {
     if (!(o instanceof _Dict) || this.size !== o.size) {
       return false;
     }
-    let equal2 = true;
+    let equal = true;
     this.forEach((v, k) => {
-      equal2 = equal2 && isEqual(o.get(k, !v), v);
+      equal = equal && isEqual(o.get(k, !v), v);
     });
-    return equal2;
+    return equal;
   }
 };
 
@@ -1261,23 +1309,20 @@ function concat(xs) {
   }
   return result;
 }
-function print_debug(string2) {
-  if (typeof process === "object" && process.stderr?.write) {
-    process.stderr.write(string2 + "\n");
-  } else if (typeof Deno === "object") {
-    Deno.stderr.writeSync(new TextEncoder().encode(string2 + "\n"));
-  } else {
-    console.log(string2);
-  }
+function ceiling(float2) {
+  return Math.ceil(float2);
 }
-function floor2(float2) {
+function floor(float2) {
   return Math.floor(float2);
 }
-function round2(float2) {
+function round(float2) {
   return Math.round(float2);
 }
 function truncate(float2) {
   return Math.trunc(float2);
+}
+function power(base, exponent) {
+  return Math.pow(base, exponent);
 }
 function random_uniform() {
   const random_uniform_result = Math.random();
@@ -1296,6 +1341,8 @@ function map_get(map3, key) {
 function classify_dynamic(data) {
   if (typeof data === "string") {
     return "String";
+  } else if (typeof data === "boolean") {
+    return "Bool";
   } else if (data instanceof Result) {
     return "Result";
   } else if (data instanceof List) {
@@ -1353,126 +1400,356 @@ function try_get_field(value3, field2, or_else) {
     return or_else();
   }
 }
-function inspect(v) {
-  const t = typeof v;
-  if (v === true)
-    return "True";
-  if (v === false)
-    return "False";
-  if (v === null)
-    return "//js(null)";
-  if (v === void 0)
-    return "Nil";
-  if (t === "string")
-    return JSON.stringify(v);
-  if (t === "bigint" || t === "number")
-    return v.toString();
-  if (Array.isArray(v))
-    return `#(${v.map(inspect).join(", ")})`;
-  if (v instanceof List)
-    return inspectList(v);
-  if (v instanceof UtfCodepoint)
-    return inspectUtfCodepoint(v);
-  if (v instanceof BitArray)
-    return inspectBitArray(v);
-  if (v instanceof CustomType)
-    return inspectCustomType(v);
-  if (v instanceof Dict)
-    return inspectDict(v);
-  if (v instanceof Set)
-    return `//js(Set(${[...v].map(inspect).join(", ")}))`;
-  if (v instanceof RegExp)
-    return `//js(${v})`;
-  if (v instanceof Date)
-    return `//js(Date("${v.toISOString()}"))`;
-  if (v instanceof Function) {
-    const args = [];
-    for (const i of Array(v.length).keys())
-      args.push(String.fromCharCode(i + 97));
-    return `//fn(${args.join(", ")}) { ... }`;
-  }
-  return inspectObject(v);
-}
-function inspectDict(map3) {
-  let body2 = "dict.from_list([";
-  let first = true;
-  map3.forEach((value3, key) => {
-    if (!first)
-      body2 = body2 + ", ";
-    body2 = body2 + "#(" + inspect(key) + ", " + inspect(value3) + ")";
-    first = false;
-  });
-  return body2 + "])";
-}
-function inspectObject(v) {
-  const name = Object.getPrototypeOf(v)?.constructor?.name || "Object";
-  const props = [];
-  for (const k of Object.keys(v)) {
-    props.push(`${inspect(k)}: ${inspect(v[k])}`);
-  }
-  const body2 = props.length ? " " + props.join(", ") + " " : "";
-  const head = name === "Object" ? "" : name + " ";
-  return `//js(${head}{${body2}})`;
-}
-function inspectCustomType(record) {
-  const props = Object.keys(record).map((label) => {
-    const value3 = inspect(record[label]);
-    return isNaN(parseInt(label)) ? `${label}: ${value3}` : value3;
-  }).join(", ");
-  return props ? `${record.constructor.name}(${props})` : record.constructor.name;
-}
-function inspectList(list) {
-  return `[${list.toArray().map(inspect).join(", ")}]`;
-}
-function inspectBitArray(bits) {
-  return `<<${Array.from(bits.buffer).join(", ")}>>`;
-}
-function inspectUtfCodepoint(codepoint2) {
-  return `//utfcodepoint(${String.fromCodePoint(codepoint2.value)})`;
-}
 
-// build/dev/javascript/gleam_stdlib/gleam/float.mjs
-function floor(x) {
-  return floor2(x);
-}
-function truncate2(x) {
-  return truncate(x);
-}
-function absolute_value2(x) {
-  let $ = x >= 0;
+// build/dev/javascript/gleam_community_colour/gleam_community/colour.mjs
+var Rgba = class extends CustomType {
+  constructor(r, g, b, a2) {
+    super();
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a2;
+  }
+};
+function valid_colour_value(c) {
+  let $ = c > 1 || c < 0;
   if ($) {
-    return x;
+    return new Error(void 0);
   } else {
-    return 0 - x;
+    return new Ok(c);
   }
 }
-function negate(x) {
-  return -1 * x;
+function hue_to_rgb(hue, m1, m2) {
+  let h = (() => {
+    if (hue < 0) {
+      return hue + 1;
+    } else if (hue > 1) {
+      return hue - 1;
+    } else {
+      return hue;
+    }
+  })();
+  let h_t_6 = h * 6;
+  let h_t_2 = h * 2;
+  let h_t_3 = h * 3;
+  if (h_t_6 < 1) {
+    return m1 + (m2 - m1) * h * 6;
+  } else if (h_t_2 < 1) {
+    return m2;
+  } else if (h_t_3 < 2) {
+    return m1 + (m2 - m1) * (divideFloat(2, 3) - h) * 6;
+  } else {
+    return m1;
+  }
 }
-function do_round(x) {
-  let $ = x >= 0;
+function hsla_to_rgba(h, s, l, a2) {
+  let m2 = (() => {
+    let $ = l <= 0.5;
+    if ($) {
+      return l * (s + 1);
+    } else {
+      return l + s - l * s;
+    }
+  })();
+  let m1 = l * 2 - m2;
+  let r = hue_to_rgb(h + divideFloat(1, 3), m1, m2);
+  let g = hue_to_rgb(h, m1, m2);
+  let b = hue_to_rgb(h - divideFloat(1, 3), m1, m2);
+  return [r, g, b, a2];
+}
+function from_rgb255(red2, green2, blue2) {
+  return then$(
+    (() => {
+      let _pipe = red2;
+      let _pipe$1 = to_float(_pipe);
+      let _pipe$2 = divide(_pipe$1, 255);
+      return then$(_pipe$2, valid_colour_value);
+    })(),
+    (r) => {
+      return then$(
+        (() => {
+          let _pipe = green2;
+          let _pipe$1 = to_float(_pipe);
+          let _pipe$2 = divide(_pipe$1, 255);
+          return then$(_pipe$2, valid_colour_value);
+        })(),
+        (g) => {
+          return then$(
+            (() => {
+              let _pipe = blue2;
+              let _pipe$1 = to_float(_pipe);
+              let _pipe$2 = divide(_pipe$1, 255);
+              return then$(_pipe$2, valid_colour_value);
+            })(),
+            (b) => {
+              return new Ok(new Rgba(r, g, b, 1));
+            }
+          );
+        }
+      );
+    }
+  );
+}
+function from_rgb(red2, green2, blue2) {
+  return then$(
+    valid_colour_value(red2),
+    (r) => {
+      return then$(
+        valid_colour_value(green2),
+        (g) => {
+          return then$(
+            valid_colour_value(blue2),
+            (b) => {
+              return new Ok(new Rgba(r, g, b, 1));
+            }
+          );
+        }
+      );
+    }
+  );
+}
+function from_rgba(red2, green2, blue2, alpha) {
+  return then$(
+    valid_colour_value(red2),
+    (r) => {
+      return then$(
+        valid_colour_value(green2),
+        (g) => {
+          return then$(
+            valid_colour_value(blue2),
+            (b) => {
+              return then$(
+                valid_colour_value(alpha),
+                (a2) => {
+                  return new Ok(new Rgba(r, g, b, a2));
+                }
+              );
+            }
+          );
+        }
+      );
+    }
+  );
+}
+function to_rgba(colour) {
+  if (colour instanceof Rgba) {
+    let r = colour.r;
+    let g = colour.g;
+    let b = colour.b;
+    let a2 = colour.a;
+    return [r, g, b, a2];
+  } else {
+    let h = colour.h;
+    let s = colour.s;
+    let l = colour.l;
+    let a2 = colour.a;
+    return hsla_to_rgba(h, s, l, a2);
+  }
+}
+var light_red = new Rgba(
+  0.9372549019607843,
+  0.1607843137254902,
+  0.1607843137254902,
+  1
+);
+var red = new Rgba(0.8, 0, 0, 1);
+var dark_red = new Rgba(0.6431372549019608, 0, 0, 1);
+var light_orange = new Rgba(
+  0.9882352941176471,
+  0.6862745098039216,
+  0.24313725490196078,
+  1
+);
+var orange = new Rgba(0.9607843137254902, 0.4745098039215686, 0, 1);
+var dark_orange = new Rgba(
+  0.807843137254902,
+  0.3607843137254902,
+  0,
+  1
+);
+var light_yellow = new Rgba(
+  1,
+  0.9137254901960784,
+  0.30980392156862746,
+  1
+);
+var yellow = new Rgba(0.9294117647058824, 0.8313725490196079, 0, 1);
+var dark_yellow = new Rgba(
+  0.7686274509803922,
+  0.6274509803921569,
+  0,
+  1
+);
+var light_green = new Rgba(
+  0.5411764705882353,
+  0.8862745098039215,
+  0.20392156862745098,
+  1
+);
+var green = new Rgba(
+  0.45098039215686275,
+  0.8235294117647058,
+  0.08627450980392157,
+  1
+);
+var dark_green = new Rgba(
+  0.3058823529411765,
+  0.6039215686274509,
+  0.023529411764705882,
+  1
+);
+var light_blue = new Rgba(
+  0.4470588235294118,
+  0.6235294117647059,
+  0.8117647058823529,
+  1
+);
+var blue = new Rgba(
+  0.20392156862745098,
+  0.396078431372549,
+  0.6431372549019608,
+  1
+);
+var dark_blue = new Rgba(
+  0.12549019607843137,
+  0.2901960784313726,
+  0.5294117647058824,
+  1
+);
+var light_purple = new Rgba(
+  0.6784313725490196,
+  0.4980392156862745,
+  0.6588235294117647,
+  1
+);
+var purple = new Rgba(
+  0.4588235294117647,
+  0.3137254901960784,
+  0.4823529411764706,
+  1
+);
+var dark_purple = new Rgba(
+  0.3607843137254902,
+  0.20784313725490197,
+  0.4,
+  1
+);
+var light_brown = new Rgba(
+  0.9137254901960784,
+  0.7254901960784313,
+  0.43137254901960786,
+  1
+);
+var brown = new Rgba(
+  0.7568627450980392,
+  0.49019607843137253,
+  0.06666666666666667,
+  1
+);
+var dark_brown = new Rgba(
+  0.5607843137254902,
+  0.34901960784313724,
+  0.00784313725490196,
+  1
+);
+var black = new Rgba(0, 0, 0, 1);
+var white = new Rgba(1, 1, 1, 1);
+var light_grey = new Rgba(
+  0.9333333333333333,
+  0.9333333333333333,
+  0.9254901960784314,
+  1
+);
+var grey = new Rgba(
+  0.8274509803921568,
+  0.8431372549019608,
+  0.8117647058823529,
+  1
+);
+var dark_grey = new Rgba(
+  0.7294117647058823,
+  0.7411764705882353,
+  0.7137254901960784,
+  1
+);
+var light_gray = new Rgba(
+  0.9333333333333333,
+  0.9333333333333333,
+  0.9254901960784314,
+  1
+);
+var gray = new Rgba(
+  0.8274509803921568,
+  0.8431372549019608,
+  0.8117647058823529,
+  1
+);
+var dark_gray = new Rgba(
+  0.7294117647058823,
+  0.7411764705882353,
+  0.7137254901960784,
+  1
+);
+var light_charcoal = new Rgba(
+  0.5333333333333333,
+  0.5411764705882353,
+  0.5215686274509804,
+  1
+);
+var charcoal = new Rgba(
+  0.3333333333333333,
+  0.3411764705882353,
+  0.3254901960784314,
+  1
+);
+var dark_charcoal = new Rgba(
+  0.1803921568627451,
+  0.20392156862745098,
+  0.21176470588235294,
+  1
+);
+var pink = new Rgba(1, 0.6862745098039216, 0.9529411764705882, 1);
+
+// build/dev/javascript/gleam_community_colour/gleam_community/colour/accessibility.mjs
+function intensity(colour_value) {
+  let $ = true;
+  if (colour_value <= 0.03928) {
+    return divideFloat(colour_value, 12.92);
+  } else {
+    let $1 = power2(divideFloat(colour_value + 0.055, 1.055), 2.4);
+    if (!$1.isOk()) {
+      throw makeError(
+        "assignment_no_match",
+        "gleam_community/colour/accessibility",
+        62,
+        "intensity",
+        "Assignment pattern did not match",
+        { value: $1 }
+      );
+    }
+    let i = $1[0];
+    return i;
+  }
+}
+function luminance(colour) {
+  let $ = to_rgba(colour);
+  let r = $[0];
+  let g = $[1];
+  let b = $[2];
+  let r_intensity = intensity(r);
+  let g_intensity = intensity(g);
+  let b_intensity = intensity(b);
+  return 0.2126 * r_intensity + 0.7152 * g_intensity + 0.0722 * b_intensity;
+}
+function contrast_ratio(colour_a, colour_b) {
+  let luminance_a = luminance(colour_a) + 0.05;
+  let luminance_b = luminance(colour_b) + 0.05;
+  let $ = luminance_a > luminance_b;
   if ($) {
-    return round2(x);
+    return divideFloat(luminance_a, luminance_b);
   } else {
-    return 0 - round2(negate(x));
+    return divideFloat(luminance_b, luminance_a);
   }
-}
-function round(x) {
-  return do_round(x);
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/string.mjs
-function inspect2(term) {
-  let _pipe = inspect(term);
-  return to_string3(_pipe);
-}
-
-// build/dev/javascript/gleam_stdlib/gleam/io.mjs
-function debug(term) {
-  let _pipe = term;
-  let _pipe$1 = inspect2(_pipe);
-  print_debug(_pipe$1);
-  return term;
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/bool.mjs
@@ -1561,22 +1838,19 @@ function type_(name) {
   return attribute("type", name);
 }
 function value(val) {
-  return property("value", from(val));
+  return attribute("value", val);
 }
-function max(val) {
+function max2(val) {
   return attribute("max", val);
 }
-function min(val) {
+function min2(val) {
   return attribute("min", val);
 }
 function step(val) {
   return attribute("step", val);
 }
-function href(uri) {
-  return attribute("href", uri);
-}
 function width(val) {
-  return property("width", to_string2(val));
+  return property("width", val);
 }
 
 // build/dev/javascript/lustre/lustre/element.mjs
@@ -1618,6 +1892,12 @@ function text(content) {
 }
 
 // build/dev/javascript/lustre/lustre/internals/runtime.mjs
+var Debug = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
 var Dispatch = class extends CustomType {
   constructor(x0) {
     super();
@@ -1626,13 +1906,19 @@ var Dispatch = class extends CustomType {
 };
 var Shutdown = class extends CustomType {
 };
+var ForceModel = class extends CustomType {
+  constructor(x0) {
+    super();
+    this[0] = x0;
+  }
+};
 
 // build/dev/javascript/lustre/vdom.ffi.mjs
 function morph(prev, next, dispatch, isComponent = false) {
   let out;
-  let stack3 = [{ prev, next, parent: prev.parentNode }];
-  while (stack3.length) {
-    let { prev: prev2, next: next2, parent } = stack3.pop();
+  let stack = [{ prev, next, parent: prev.parentNode }];
+  while (stack.length) {
+    let { prev: prev2, next: next2, parent } = stack.pop();
     if (next2.subtree !== void 0)
       next2 = next2.subtree();
     if (next2.content !== void 0) {
@@ -1654,7 +1940,7 @@ function morph(prev, next, dispatch, isComponent = false) {
         prev: prev2,
         next: next2,
         dispatch,
-        stack: stack3,
+        stack,
         isComponent
       });
       if (!prev2) {
@@ -1663,11 +1949,18 @@ function morph(prev, next, dispatch, isComponent = false) {
         parent.replaceChild(created, prev2);
       }
       out ??= created;
+    } else if (next2.elements !== void 0) {
+      iterateElement(next2, (fragmentElement) => {
+        stack.unshift({ prev: prev2, next: fragmentElement, parent });
+        prev2 = prev2?.nextSibling;
+      });
+    } else if (next2.subtree !== void 0) {
+      stack.push({ prev: prev2, next: next2, parent });
     }
   }
   return out;
 }
-function createElementNode({ prev, next, dispatch, stack: stack3 }) {
+function createElementNode({ prev, next, dispatch, stack }) {
   const namespace = next.namespace || "http://www.w3.org/1999/xhtml";
   const canMorph = prev && prev.nodeType === Node.ELEMENT_NODE && prev.localName === next.tag && prev.namespaceURI === (next.namespace || "http://www.w3.org/1999/xhtml");
   const el2 = canMorph ? prev : namespace ? document.createElementNS(namespace, next.tag) : document.createElement(next.tag);
@@ -1687,9 +1980,11 @@ function createElementNode({ prev, next, dispatch, stack: stack3 }) {
   for (const attr of next.attrs) {
     const name = attr[0];
     const value3 = attr[1];
-    const isProperty = attr[2];
-    if (isProperty) {
-      el2[name] = value3;
+    if (attr.as_property) {
+      if (el2[name] !== value3)
+        el2[name] = value3;
+      if (canMorph)
+        prevAttributes.delete(name);
     } else if (name.startsWith("on")) {
       const eventName = name.slice(2);
       const callback = dispatch(value3);
@@ -1714,8 +2009,9 @@ function createElementNode({ prev, next, dispatch, stack: stack3 }) {
     } else if (name === "dangerous-unescaped-html") {
       innerHTML = value3;
     } else {
-      el2.setAttribute(name, value3);
-      if (name === "value")
+      if (typeof value3 === "string")
+        el2.setAttribute(name, value3);
+      if (name === "value" || name === "selected")
         el2[name] = value3;
       if (canMorph)
         prevAttributes.delete(name);
@@ -1759,45 +2055,22 @@ function createElementNode({ prev, next, dispatch, stack: stack3 }) {
     incomingKeyedChildren = getKeyedChildren(next);
   }
   for (const child of next.children) {
-    if (child.key !== void 0 && seenKeys !== null) {
-      while (prevChild && !incomingKeyedChildren.has(prevChild.getAttribute("data-lustre-key"))) {
-        const nextChild = prevChild.nextSibling;
-        el2.removeChild(prevChild);
-        prevChild = nextChild;
-      }
-      if (keyedChildren.size === 0) {
-        stack3.unshift({ prev: prevChild, next: child, parent: el2 });
+    iterateElement(child, (currElement) => {
+      if (currElement.key !== void 0 && seenKeys !== null) {
+        prevChild = diffKeyedChild(
+          prevChild,
+          currElement,
+          el2,
+          stack,
+          incomingKeyedChildren,
+          keyedChildren,
+          seenKeys
+        );
+      } else {
+        stack.unshift({ prev: prevChild, next: currElement, parent: el2 });
         prevChild = prevChild?.nextSibling;
-        continue;
       }
-      if (seenKeys.has(child.key)) {
-        console.warn(`Duplicate key found in Lustre vnode: ${child.key}`);
-        stack3.unshift({ prev: null, next: child, parent: el2 });
-        continue;
-      }
-      seenKeys.add(child.key);
-      const keyedChild = keyedChildren.get(child.key);
-      if (!keyedChild && !prevChild) {
-        stack3.unshift({ prev: null, next: child, parent: el2 });
-        continue;
-      }
-      if (!keyedChild && prevChild !== null) {
-        const placeholder = document.createTextNode("");
-        el2.insertBefore(placeholder, prevChild);
-        stack3.unshift({ prev: placeholder, next: child, parent: el2 });
-        continue;
-      }
-      if (!keyedChild || keyedChild === prevChild) {
-        stack3.unshift({ prev: prevChild, next: child, parent: el2 });
-        prevChild = prevChild?.nextSibling;
-        continue;
-      }
-      el2.insertBefore(keyedChild, prevChild);
-      stack3.unshift({ prev: keyedChild, next: child, parent: el2 });
-    } else {
-      stack3.unshift({ prev: prevChild, next: child, parent: el2 });
-      prevChild = prevChild?.nextSibling;
-    }
+    });
   }
   while (prevChild) {
     const next2 = prevChild.nextSibling;
@@ -1855,12 +2128,62 @@ function getKeyedChildren(el2) {
   const keyedChildren = /* @__PURE__ */ new Map();
   if (el2) {
     for (const child of el2.children) {
-      const key = child.key || child?.getAttribute("data-lustre-key");
-      if (key)
-        keyedChildren.set(key, child);
+      iterateElement(child, (currElement) => {
+        const key = currElement?.key || currElement?.getAttribute?.("data-lustre-key");
+        if (key)
+          keyedChildren.set(key, currElement);
+      });
     }
   }
   return keyedChildren;
+}
+function diffKeyedChild(prevChild, child, el2, stack, incomingKeyedChildren, keyedChildren, seenKeys) {
+  while (prevChild && !incomingKeyedChildren.has(prevChild.getAttribute("data-lustre-key"))) {
+    const nextChild = prevChild.nextSibling;
+    el2.removeChild(prevChild);
+    prevChild = nextChild;
+  }
+  if (keyedChildren.size === 0) {
+    iterateElement(child, (currChild) => {
+      stack.unshift({ prev: prevChild, next: currChild, parent: el2 });
+      prevChild = prevChild?.nextSibling;
+    });
+    return prevChild;
+  }
+  if (seenKeys.has(child.key)) {
+    console.warn(`Duplicate key found in Lustre vnode: ${child.key}`);
+    stack.unshift({ prev: null, next: child, parent: el2 });
+    return prevChild;
+  }
+  seenKeys.add(child.key);
+  const keyedChild = keyedChildren.get(child.key);
+  if (!keyedChild && !prevChild) {
+    stack.unshift({ prev: null, next: child, parent: el2 });
+    return prevChild;
+  }
+  if (!keyedChild && prevChild !== null) {
+    const placeholder = document.createTextNode("");
+    el2.insertBefore(placeholder, prevChild);
+    stack.unshift({ prev: placeholder, next: child, parent: el2 });
+    return prevChild;
+  }
+  if (!keyedChild || keyedChild === prevChild) {
+    stack.unshift({ prev: prevChild, next: child, parent: el2 });
+    prevChild = prevChild?.nextSibling;
+    return prevChild;
+  }
+  el2.insertBefore(keyedChild, prevChild);
+  stack.unshift({ prev: keyedChild, next: child, parent: el2 });
+  return prevChild;
+}
+function iterateElement(element2, processElement) {
+  if (element2.elements !== void 0) {
+    for (const currElement of element2.elements) {
+      processElement(currElement);
+    }
+  } else {
+    processElement(element2);
+  }
 }
 
 // build/dev/javascript/lustre/client-runtime.ffi.mjs
@@ -1901,6 +2224,10 @@ var LustreClientApplication = class _LustreClientApplication {
       }
       case action instanceof Shutdown: {
         this.#shutdown();
+        return;
+      }
+      case action instanceof Debug: {
+        this.#debug(action[0]);
         return;
       }
       default:
@@ -1946,6 +2273,23 @@ var LustreClientApplication = class _LustreClientApplication {
         this.#flush_queue(++iterations);
       } else {
         window.requestAnimationFrame(() => this.#tick());
+      }
+    }
+  }
+  #debug(action) {
+    switch (true) {
+      case action instanceof ForceModel: {
+        const vdom = this.#view(action[0]);
+        const dispatch = (handler) => (e) => {
+          const result = handler(e);
+          if (result instanceof Ok) {
+            this.send(new Dispatch(result[0]));
+          }
+        };
+        this.#queue = [];
+        this.#effects = [];
+        this.#didUpdate = false;
+        this.#root = morph(this.#root, vdom, dispatch, this.#isComponent);
       }
     }
   }
@@ -2015,9 +2359,6 @@ function h1(attrs, children) {
 function div(attrs, children) {
   return element("div", attrs, children);
 }
-function a(attrs, children) {
-  return element("a", attrs, children);
-}
 function span(attrs, children) {
   return element("span", attrs, children);
 }
@@ -2053,95 +2394,6 @@ function on_input(msg) {
   );
 }
 
-// build/dev/javascript/lustre_ui/lustre/ui/button.mjs
-function button2(attributes, children) {
-  return button(
-    toList(
-      [class$("lustre-ui-button"), type_("button")],
-      attributes
-    ),
-    children
-  );
-}
-
-// build/dev/javascript/lustre_ui/lustre/ui/layout/stack.mjs
-function of(element2, attributes, children) {
-  return element2(
-    toList([class$("lustre-ui-stack")], attributes),
-    children
-  );
-}
-function stack(attributes, children) {
-  return of(div, attributes, children);
-}
-
-// build/dev/javascript/lustre_ui/lustre/ui/input.mjs
-function input2(attributes) {
-  return input(toList([class$("lustre-ui-input")], attributes));
-}
-
-// build/dev/javascript/lustre_ui/lustre/ui/layout/box.mjs
-function of2(element2, attributes, children) {
-  return element2(
-    toList([class$("lustre-ui-box")], attributes),
-    children
-  );
-}
-function box(attributes, children) {
-  return of2(div, attributes, children);
-}
-
-// build/dev/javascript/lustre_ui/lustre/ui/layout/centre.mjs
-function of3(element2, attributes, children) {
-  return element2(
-    toList([class$("lustre-ui-centre")], attributes),
-    toList([children])
-  );
-}
-function centre(attributes, children) {
-  return of3(div, attributes, children);
-}
-
-// build/dev/javascript/lustre_ui/lustre/ui/layout/cluster.mjs
-function of4(element2, attributes, children) {
-  return element2(
-    toList([class$("lustre-ui-cluster")], attributes),
-    children
-  );
-}
-function cluster(attributes, children) {
-  return of4(div, attributes, children);
-}
-function align_centre() {
-  return class$("align-centre");
-}
-function stretch() {
-  return class$("stretch");
-}
-function loose() {
-  return class$("loose");
-}
-
-// build/dev/javascript/lustre_ui/lustre/ui/prose.mjs
-function of5(element2, attributes, children) {
-  return element2(
-    toList([class$("lustre-ui-prose")], attributes),
-    children
-  );
-}
-function prose(attributes, children) {
-  return of5(div, attributes, children);
-}
-
-// build/dev/javascript/lustre_ui/lustre/ui.mjs
-var box2 = box;
-var button3 = button2;
-var centre2 = centre;
-var cluster2 = cluster;
-var input3 = input2;
-var prose2 = prose;
-var stack2 = stack;
-
 // build/dev/javascript/rgbeam/rgbeam.mjs
 var Model = class extends CustomType {
   constructor(actual, current_guess, guesses) {
@@ -2151,78 +2403,71 @@ var Model = class extends CustomType {
     this.guesses = guesses;
   }
 };
-var Rgb = class extends CustomType {
-  constructor(red, green, blue) {
-    super();
-    this.red = red;
-    this.green = green;
-    this.blue = blue;
-  }
+var Red = class extends CustomType {
 };
-var ColorValue = class extends CustomType {
-  constructor(value3) {
-    super();
-    this.value = value3;
-  }
+var Green = class extends CustomType {
+};
+var Blue = class extends CustomType {
 };
 var UserGuessed = class extends CustomType {
 };
-var UserChangedRed = class extends CustomType {
-  constructor(x0) {
+var UserChangedColor = class extends CustomType {
+  constructor(x0, x1) {
     super();
     this[0] = x0;
+    this[1] = x1;
   }
 };
-var UserChangedGreen = class extends CustomType {
-  constructor(x0) {
-    super();
-    this[0] = x0;
+function force_color_from_rgb255(red2, green2, blue2) {
+  let $ = from_rgb255(red2, green2, blue2);
+  if (!$.isOk()) {
+    throw makeError(
+      "assignment_no_match",
+      "rgbeam",
+      43,
+      "force_color_from_rgb255",
+      "Assignment pattern did not match",
+      { value: $ }
+    );
   }
-};
-var UserChangedBlue = class extends CustomType {
-  constructor(x0) {
-    super();
-    this[0] = x0;
-  }
-};
-function to_base16_string(color) {
-  return to_base16(color.value);
+  let color = $[0];
+  return color;
 }
-function to_float2(color) {
-  return to_float(color.value);
+function random_color() {
+  let random_color_255 = () => {
+    let rand = random(16);
+    return rand * 16 + rand;
+  };
+  return force_color_from_rgb255(
+    random_color_255(),
+    random_color_255(),
+    random_color_255()
+  );
 }
-function view_slider(color, on_input2, accent_color) {
-  return input3(
+function init(_) {
+  return [
+    new Model(
+      random_color(),
+      force_color_from_rgb255(8 * 16, 8 * 16, 8 * 16),
+      toList([])
+    ),
+    none()
+  ];
+}
+function view_slider(color_value, on_input2, accent_color) {
+  return input(
     toList([
       type_("range"),
-      min("0"),
-      max("15"),
+      min2("0"),
+      max2("15"),
       width(50),
-      value(to_string2(color.value)),
+      value(to_string2(color_value)),
       step("1"),
       style(toList([["accent-color", accent_color]])),
+      class$("m-2 shrink-0 text-center"),
       on_input(on_input2)
     ])
   );
-}
-function view_current_percent(current, actual) {
-  let abs_red = absolute_value2(
-    to_float2(actual.red) - to_float2(current.red)
-  );
-  let abs_green = absolute_value2(
-    to_float2(actual.green) - to_float2(current.green)
-  );
-  let abs_blue = absolute_value2(
-    to_float2(actual.blue) - to_float2(current.blue)
-  );
-  let _pipe = divideFloat(
-    divideFloat(16 - abs_red, 16) + divideFloat(
-      16 - abs_green,
-      16
-    ) + divideFloat(16 - abs_blue, 16),
-    3
-  ) * 100;
-  return truncate2(_pipe);
 }
 function potential_win(guess, actual) {
   let $ = isEqual(guess, actual);
@@ -2232,29 +2477,134 @@ function potential_win(guess, actual) {
     return toList([text2("Perfect match!")]);
   }
 }
-function view_rgb(color) {
-  return "#" + to_base16_string(color.red) + to_base16_string(color.green) + to_base16_string(
-    color.blue
+function get_color_float(color, basic_color) {
+  let $ = to_rgba(color);
+  let red2 = $[0];
+  let green2 = $[1];
+  let blue2 = $[2];
+  if (basic_color instanceof Red) {
+    return red2;
+  } else if (basic_color instanceof Green) {
+    return green2;
+  } else {
+    return blue2;
+  }
+}
+function view_current_percent(current, actual) {
+  let abs_difference = (base_color) => {
+    let _pipe2 = get_color_float(current, base_color) - get_color_float(
+      actual,
+      base_color
+    );
+    return absolute_value(_pipe2);
+  };
+  let abs_red = abs_difference(new Red());
+  let abs_green = abs_difference(new Green());
+  let abs_blue = abs_difference(new Blue());
+  let _pipe = divideFloat(
+    divideFloat(1 - abs_red, 1) + divideFloat(1 - abs_green, 1) + divideFloat(
+      1 - abs_blue,
+      1
+    ),
+    3
+  ) * 100;
+  return round2(_pipe);
+}
+function get_color_rgb16(color, basic_color) {
+  return truncate2(get_color_float(color, basic_color) * 15);
+}
+function view_color(color) {
+  let red16 = get_color_rgb16(color, new Red());
+  let green16 = get_color_rgb16(color, new Green());
+  let blue16 = get_color_rgb16(color, new Blue());
+  return "#" + to_base16(red16) + to_base16(green16) + to_base16(
+    blue16
+  );
+}
+function view_basic_color(color, basic_color) {
+  let $ = to_rgba(color);
+  let r = $[0];
+  let g = $[1];
+  let b = $[2];
+  let a2 = $[3];
+  let $1 = (() => {
+    if (basic_color instanceof Red) {
+      return from_rgba(r, 0, 0, a2);
+    } else if (basic_color instanceof Green) {
+      return from_rgba(0, g, 0, a2);
+    } else {
+      return from_rgba(0, 0, b, a2);
+    }
+  })();
+  if (!$1.isOk()) {
+    throw makeError(
+      "assignment_no_match",
+      "rgbeam",
+      154,
+      "view_basic_color",
+      "Assignment pattern did not match",
+      { value: $1 }
+    );
+  }
+  let new_color = $1[0];
+  return view_color(new_color);
+}
+function view_slider_component(model) {
+  return div(
+    toList([
+      class$(
+        "flex flex-col align-center justify-center min-w-full p-10 lg:min-w-[50%]"
+      )
+    ]),
+    toList([
+      view_slider(
+        get_color_rgb16(model.current_guess, new Red()),
+        (_capture) => {
+          return new UserChangedColor(_capture, new Red());
+        },
+        view_basic_color(model.current_guess, new Red())
+      ),
+      view_slider(
+        get_color_rgb16(model.current_guess, new Green()),
+        (_capture) => {
+          return new UserChangedColor(_capture, new Green());
+        },
+        view_basic_color(model.current_guess, new Green())
+      ),
+      view_slider(
+        get_color_rgb16(model.current_guess, new Blue()),
+        (_capture) => {
+          return new UserChangedColor(_capture, new Blue());
+        },
+        view_basic_color(model.current_guess, new Blue())
+      )
+    ])
+  );
+}
+function view_submit_button(current_guess) {
+  return button(
+    toList([
+      class$(
+        "\n        text-white text-center m-5 p-5 b-0 block rounded-lg bg-[length:auto_200%] bg-left\n        bg-gradient-to-r from-sky-950 to-cyan-600 duration-500 hover:bg-right\n        hover:bg-gray hover:no-underline min-w-80"
+      ),
+      on_click(new UserGuessed())
+    ]),
+    toList([text("Submit " + view_color(current_guess))])
   );
 }
 function view_guess(guess_with_count, actual) {
   let guess = guess_with_count[0];
   let index2 = guess_with_count[1];
-  let rgb_display = view_rgb(guess);
-  return cluster2(
-    toList([stretch(), align_centre()]),
+  let rgb_display = view_color(guess);
+  return div(
+    toList([]),
     toList([
-      box2(
-        toList([style(toList([["background-color", "#DDD"]]))]),
-        toList([
-          text2(to_string2(index2) + ") "),
-          text2(rgb_display + " "),
-          text2(
-            "(Accuracy: " + to_string2(view_current_percent(guess, actual)) + "%)"
-          )
-        ])
+      text2(to_string2(index2) + ") "),
+      text2(rgb_display + " "),
+      text2(
+        "(Accuracy: " + to_string2(view_current_percent(guess, actual)) + "%)"
       ),
-      box2(
+      div(
         toList([
           style(toList([["background-color", rgb_display]])),
           width(50)
@@ -2264,205 +2614,130 @@ function view_guess(guess_with_count, actual) {
     ])
   );
 }
-function view(model) {
-  return body(
+function view_guesses(model) {
+  return div(
+    toList([]),
+    (() => {
+      let _pipe = zip(
+        model.guesses,
+        range(length(model.guesses), 1)
+      );
+      return map(
+        _pipe,
+        (_capture) => {
+          return view_guess(_capture, model.actual);
+        }
+      );
+    })()
+  );
+}
+function text_class_for_background(color) {
+  let $ = from_rgb(1, 1, 1);
+  if (!$.isOk()) {
+    throw makeError(
+      "assignment_no_match",
+      "rgbeam",
+      273,
+      "text_class_for_background",
+      "Assignment pattern did not match",
+      { value: $ }
+    );
+  }
+  let dark_text_color = $[0];
+  let $1 = contrast_ratio(color, dark_text_color) > 4.5;
+  if ($1) {
+    return "text-white";
+  } else {
+    return "text-black";
+  }
+}
+function view_title(actual) {
+  return h1(
     toList([
-      style(
-        toList([
-          ["background", view_rgb(model.actual)],
-          ["height", "100vh"],
-          ["min-height", "100vh"],
-          ["margin", "0"],
-          ["padding", "0"]
-        ])
+      class$(
+        text_class_for_background(actual) + " text-4xl font-bold text-center mt-[20%] mg-5"
       )
     ]),
     toList([
-      a(
-        toList([href("https://susam.net/myrgb.html")]),
-        toList([text2("Original")])
+      text2("Guess this "),
+      span(
+        toList([class$("rgb text-4xl font-bold")]),
+        toList([text2("RGB")])
       ),
-      text2(", "),
-      a(
-        toList([href("https://github.com/george-grec/rgbeam")]),
-        toList([text2("Github")])
-      ),
-      centre2(
-        toList([]),
-        prose2(
-          toList([]),
-          toList([
-            h1(
-              toList([
-                style(
-                  toList([
-                    ["text-align", "center"],
-                    ["background-color", "#DDD"]
-                  ])
-                )
-              ]),
-              toList([text2("Guess this RGB!")])
-            )
-          ])
-        )
-      ),
-      centre2(
-        toList([]),
-        stack2(
-          toList([]),
-          toList([
-            cluster2(
-              toList([loose()]),
-              (() => {
-                let _pipe = range(0, 15);
-                let _pipe$1 = map(_pipe, to_base16);
-                return map(
-                  _pipe$1,
-                  (x) => {
-                    return span(toList([]), toList([text2(x)]));
-                  }
-                );
-              })()
-            ),
-            view_slider(
-              model.current_guess.red,
-              (var0) => {
-                return new UserChangedRed(var0);
-              },
-              view_rgb(
-                new Rgb(
-                  model.current_guess.red,
-                  new ColorValue(0),
-                  new ColorValue(0)
-                )
-              )
-            ),
-            view_slider(
-              model.current_guess.green,
-              (var0) => {
-                return new UserChangedGreen(var0);
-              },
-              view_rgb(
-                new Rgb(
-                  new ColorValue(0),
-                  model.current_guess.green,
-                  new ColorValue(0)
-                )
-              )
-            ),
-            view_slider(
-              model.current_guess.blue,
-              (var0) => {
-                return new UserChangedBlue(var0);
-              },
-              view_rgb(
-                new Rgb(
-                  new ColorValue(0),
-                  new ColorValue(0),
-                  model.current_guess.blue
-                )
-              )
-            )
-          ])
-        )
-      ),
-      centre2(
-        toList([]),
-        stack2(
-          toList([]),
-          toList([
-            button3(
-              toList([on_click(new UserGuessed())]),
-              toList([text("Submit " + view_rgb(model.current_guess))])
-            ),
-            stack2(
-              toList([]),
-              (() => {
-                let _pipe = zip(
-                  model.guesses,
-                  range(length(model.guesses), 1)
-                );
-                return map(
-                  _pipe,
-                  (_capture) => {
-                    return view_guess(_capture, model.actual);
-                  }
-                );
-              })()
-            )
-          ])
-        )
-      )
+      text2("!")
     ])
   );
 }
-function parse_color(raw_value, fallback) {
+function view(model) {
+  return body(
+    toList([
+      style(toList([["background", view_color(model.actual)]])),
+      class$(
+        "flex flex-col items-center justify-start m-0 p-0 h-screen min-h-screen"
+      )
+    ]),
+    toList([
+      view_title(model.actual),
+      view_slider_component(model),
+      view_submit_button(model.current_guess),
+      view_guesses(model)
+    ])
+  );
+}
+function parse_color(raw_value, basic_color, current_color) {
   let _pipe = parse(raw_value);
   let _pipe$1 = map2(
     _pipe,
-    (_capture) => {
-      return new ColorValue(_capture);
+    (rgb16) => {
+      let parsed_color_value = divideFloat(to_float(rgb16), 15);
+      let $ = to_rgba(current_color);
+      let r = $[0];
+      let g = $[1];
+      let b = $[2];
+      let a2 = $[3];
+      let $1 = (() => {
+        if (basic_color instanceof Red) {
+          return from_rgba(parsed_color_value, g, b, a2);
+        } else if (basic_color instanceof Green) {
+          return from_rgba(r, parsed_color_value, b, a2);
+        } else {
+          return from_rgba(r, g, parsed_color_value, a2);
+        }
+      })();
+      if (!$1.isOk()) {
+        throw makeError(
+          "assignment_no_match",
+          "rgbeam",
+          314,
+          "",
+          "Assignment pattern did not match",
+          { value: $1 }
+        );
+      }
+      let new_color = $1[0];
+      return new_color;
     }
   );
-  return unwrap(_pipe$1, fallback);
+  return unwrap(_pipe$1, current_color);
 }
 function update(model, msg) {
-  let return$ = (() => {
-    if (msg instanceof UserChangedRed) {
-      let new_color = msg[0];
-      let new_red = parse_color(new_color, model.current_guess.red);
-      return [
-        model.withFields({
-          current_guess: model.current_guess.withFields({ red: new_red })
-        }),
-        none()
-      ];
-    } else if (msg instanceof UserChangedGreen) {
-      let new_color = msg[0];
-      let new_green = parse_color(new_color, model.current_guess.green);
-      return [
-        model.withFields({
-          current_guess: model.current_guess.withFields({ green: new_green })
-        }),
-        none()
-      ];
-    } else if (msg instanceof UserChangedBlue) {
-      let new_color = msg[0];
-      let new_blue = parse_color(new_color, model.current_guess.blue);
-      return [
-        model.withFields({
-          current_guess: model.current_guess.withFields({ blue: new_blue })
-        }),
-        none()
-      ];
-    } else {
-      return [
-        model.withFields({
-          guesses: toList([model.current_guess], model.guesses)
-        }),
-        none()
-      ];
-    }
-  })();
-  debug(return$[0]);
-  return return$;
-}
-var steps = 16;
-function random_rgb() {
-  let random_16 = () => {
-    return new ColorValue(random(steps));
-  };
-  return new Rgb(random_16(), random_16(), random_16());
-}
-function init(_) {
-  return [
-    new Model(
-      random_rgb(),
-      new Rgb(new ColorValue(8), new ColorValue(8), new ColorValue(8)),
-      toList([])
-    ),
-    none()
-  ];
+  if (msg instanceof UserChangedColor) {
+    let new_color = msg[0];
+    let color_type = msg[1];
+    return [
+      model.withFields({
+        current_guess: parse_color(new_color, color_type, model.current_guess)
+      }),
+      none()
+    ];
+  } else {
+    return [
+      model.withFields({
+        guesses: prepend(model.current_guess, model.guesses)
+      }),
+      none()
+    ];
+  }
 }
 function main() {
   let app = application(init, update, view);
@@ -2471,7 +2746,7 @@ function main() {
     throw makeError(
       "assignment_no_match",
       "rgbeam",
-      19,
+      17,
       "main",
       "Assignment pattern did not match",
       { value: $ }
@@ -2479,6 +2754,6 @@ function main() {
   }
   return $;
 }
-export {
-  main
-};
+
+// build/.lustre/entry.mjs
+main();
