@@ -588,6 +588,10 @@ video {
   flex-shrink: 0;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
 .flex-col {
   flex-direction: column;
 }
@@ -657,6 +661,11 @@ video {
   line-height: 2.5rem;
 }
 
+.text-8xl {
+  font-size: 6rem;
+  line-height: 1;
+}
+
 .font-bold {
   font-weight: 700;
 }
@@ -697,5 +706,15 @@ video {
 @media (min-width: 1024px) {
   .lg\:min-w-\[50\%\] {
     min-width: 50%;
+  }
+
+  .lg\:text-5xl {
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  .lg\:text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
   }
 }

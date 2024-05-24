@@ -2424,7 +2424,7 @@ function force_color_from_rgb255(red2, green2, blue2) {
     throw makeError(
       "assignment_no_match",
       "rgbeam",
-      43,
+      42,
       "force_color_from_rgb255",
       "Assignment pattern did not match",
       { value: $ }
@@ -2464,7 +2464,7 @@ function view_slider(color_value, on_input2, accent_color) {
       value(to_string2(color_value)),
       step("1"),
       style(toList([["accent-color", accent_color]])),
-      class$("m-2 shrink-0 text-center"),
+      class$("m-2 shrink-0 text-center rounded-lg cursor-pointer"),
       on_input(on_input2)
     ])
   );
@@ -2540,7 +2540,7 @@ function view_basic_color(color, basic_color) {
     throw makeError(
       "assignment_no_match",
       "rgbeam",
-      154,
+      155,
       "view_basic_color",
       "Assignment pattern did not match",
       { value: $1 }
@@ -2585,7 +2585,7 @@ function view_submit_button(current_guess) {
   return button(
     toList([
       class$(
-        "\n        text-white text-center m-5 p-5 b-0 block rounded-lg bg-[length:auto_200%] bg-left\n        bg-gradient-to-r from-sky-950 to-cyan-600 duration-500 hover:bg-right\n        hover:bg-gray hover:no-underline min-w-80"
+        "\n        text-white text-center text-4xl lg:text-lg m-5 p-5 b-0 block rounded-lg bg-[length:auto_200%] bg-left\n        bg-gradient-to-r from-sky-950 to-cyan-600 duration-500 hover:bg-right\n        hover:bg-gray hover:no-underline min-w-80"
       ),
       on_click(new UserGuessed())
     ]),
@@ -2637,7 +2637,7 @@ function text_class_for_background(color) {
     throw makeError(
       "assignment_no_match",
       "rgbeam",
-      273,
+      274,
       "text_class_for_background",
       "Assignment pattern did not match",
       { value: $ }
@@ -2655,13 +2655,13 @@ function view_title(actual) {
   return h1(
     toList([
       class$(
-        text_class_for_background(actual) + " text-4xl font-bold text-center mt-[20%] mg-5"
+        text_class_for_background(actual) + " text-8xl lg:text-5xl font-bold text-center mt-[20%] mg-5 p-5"
       )
     ]),
     toList([
       text2("Guess this "),
       span(
-        toList([class$("rgb text-4xl font-bold")]),
+        toList([class$("rgb text-8xl lg:text-5xl font-bold")]),
         toList([text2("RGB")])
       ),
       text2("!")
@@ -2708,7 +2708,7 @@ function parse_color(raw_value, basic_color, current_color) {
         throw makeError(
           "assignment_no_match",
           "rgbeam",
-          314,
+          315,
           "",
           "Assignment pattern did not match",
           { value: $1 }
@@ -2746,7 +2746,7 @@ function main() {
     throw makeError(
       "assignment_no_match",
       "rgbeam",
-      17,
+      16,
       "main",
       "Assignment pattern did not match",
       { value: $ }

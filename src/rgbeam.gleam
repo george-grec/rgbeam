@@ -80,12 +80,14 @@ fn view_title(actual: Color) {
     [
       attribute.class(
         text_class_for_background(actual)
-        <> " text-4xl font-bold text-center mt-[20%] mg-5",
+        <> " text-8xl lg:text-5xl font-bold text-center mt-[20%] mg-5 p-5",
       ),
     ],
     [
       html.text("Guess this "),
-      html.span([attribute.class("rgb text-4xl font-bold")], [html.text("RGB")]),
+      html.span([attribute.class("rgb text-8xl lg:text-5xl font-bold")], [
+        html.text("RGB"),
+      ]),
       html.text("!"),
     ],
   )
@@ -143,7 +145,7 @@ fn view_slider(
     attribute.value(int.to_string(color_value)),
     attribute.step("1"),
     attribute.style([#("accent-color", accent_color)]),
-    attribute.class("m-2 shrink-0 text-center"),
+    attribute.class("m-2 shrink-0 text-center rounded-lg cursor-pointer"),
     event.on_input(on_input),
   ])
 }
@@ -175,7 +177,7 @@ fn view_submit_button(current_guess: Color) {
     [
       attribute.class(
         "
-        text-white text-center m-5 p-5 b-0 block rounded-lg bg-[length:auto_200%] bg-left
+        text-white text-center text-4xl lg:text-lg m-5 p-5 b-0 block rounded-lg bg-[length:auto_200%] bg-left
         bg-gradient-to-r from-sky-950 to-cyan-600 duration-500 hover:bg-right
         hover:bg-gray hover:no-underline min-w-80",
       ),
