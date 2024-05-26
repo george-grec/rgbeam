@@ -67,6 +67,7 @@ fn view(model: Model) -> Element(Msg) {
       ),
     ],
     [
+      view_navbar(),
       view_title(model.actual),
       view_slider_component(model),
       view_submit_button(model.current_guess),
@@ -80,21 +81,19 @@ fn view_title(actual: Color) {
     [
       attribute.class(
         text_class_for_background(actual)
-        <> " text-8xl lg:text-5xl font-bold text-center mt-[20%] mg-5 p-5",
+        <> " text-8xl lg:text-3xl font-bold text-center mt-[20%] lg:mt-[5%] mg-5 p-5",
       ),
     ],
     [
       html.text("Guess this "),
-      html.span([attribute.class("rgb text-8xl lg:text-5xl font-bold")], [
-        html.text("RGB"),
-      ]),
+      html.span([attribute.class("rgb")], [html.text("RGB")]),
       html.text("!"),
     ],
   )
 }
 
 fn view_navbar() {
-  [
+  html.div([attribute.class("self-start text-3xl lg:text-base m-10 lg:m-5")], [
     html.a([attribute.href("https://susam.net/myrgb.html")], [
       html.text("Original"),
     ]),
@@ -102,17 +101,18 @@ fn view_navbar() {
     html.a([attribute.href("https://github.com/george-grec/rgbeam")], [
       html.text("Github"),
     ]),
-  ]
+  ])
 }
 
 fn view_slider_component(model: Model) -> Element(Msg) {
   html.div(
     [
       attribute.class(
-        "flex flex-col align-center justify-center min-w-full p-10 lg:min-w-[50%]",
+        "mx-20 px-20 flex flex-col align-center justify-center min-w-full py-10 lg:py-0 lg:min-w-[50%]",
       ),
     ],
     [
+      view_slider_label(model.actual),
       view_slider(
         get_color_rgb16(model.current_guess, Red),
         UserChangedColor(_, Red),
@@ -141,11 +141,12 @@ fn view_slider(
     attribute.type_("range"),
     attribute.min("0"),
     attribute.max("15"),
-    attribute.width(50),
     attribute.value(int.to_string(color_value)),
     attribute.step("1"),
     attribute.style([#("accent-color", accent_color)]),
-    attribute.class("m-2 shrink-0 text-center rounded-lg cursor-pointer"),
+    attribute.class(
+      "mt-10 lg:mt-5 shrink-0 text-center rounded-lg cursor-pointer w-full",
+    ),
     event.on_input(on_input),
   ])
 }
@@ -177,9 +178,10 @@ fn view_submit_button(current_guess: Color) {
     [
       attribute.class(
         "
-        text-white text-center text-4xl lg:text-lg m-5 p-5 b-0 block rounded-lg bg-[length:auto_200%] bg-left
+        text-slate-100 text-center text-4xl lg:text-lg m-5 lg:mg-0 p-5 lg:p-2 b-0 block rounded-lg
+        bg-[length:auto_200%] bg-left min-w-80 lg:min-w-48
         bg-gradient-to-r from-sky-950 to-cyan-600 duration-500 hover:bg-right
-        hover:bg-gray hover:no-underline min-w-80",
+        hover:bg-gray hover:no-underline",
       ),
       event.on_click(UserGuessed),
     ],
@@ -195,12 +197,21 @@ fn view_guesses(model: Model) {
   )
 }
 
-fn view_slider_label() {
-  html.div([], {
-    list.range(0, 15)
-    |> list.map(int.to_base16)
-    |> list.map(fn(x) { html.span([], [html.text(x)]) })
-  })
+fn view_slider_label(actual: Color) {
+  html.div(
+    [
+      attribute.class(
+        "flex flex-row justify-between " <> text_class_for_background(actual),
+      ),
+    ],
+    {
+      list.range(0, 15)
+      |> list.map(int.to_base16)
+      |> list.map(fn(x) {
+        html.span([attribute.class("text-3xl lg:text-base")], [html.text(x)])
+      })
+    },
+  )
 }
 
 fn view_current_percent(current: Color, actual: Color) -> Int {
@@ -229,22 +240,35 @@ fn view_guess(guess_with_count: #(Color, Int), actual: Color) -> Element(Msg) {
   let #(guess, index) = guess_with_count
   let rgb_display = view_color(guess)
 
-  html.div([], [
-    html.text(int.to_string(index) <> ") "),
-    html.text(rgb_display <> " "),
-    html.text(
-      "(Accuracy: "
-      <> { int.to_string(view_current_percent(guess, actual)) }
-      <> "%)",
-    ),
-    html.div(
-      [
-        attribute.style([#("background-color", rgb_display)]),
-        attribute.width(50),
-      ],
-      potential_win(guess, actual),
-    ),
-  ])
+  html.div(
+    [
+      attribute.class(
+        "text-4xl lg:text-base mt-5 " <> text_class_for_background(actual),
+      ),
+    ],
+    [
+      html.text(int.to_string(index) <> ") "),
+      html.span(
+        [
+          attribute.style([#("background", rgb_display)]),
+          attribute.class(text_class_for_background(guess)),
+        ],
+        [html.text(" " <> rgb_display <> " ")],
+      ),
+      html.text(
+        " (Accuracy: "
+        <> { int.to_string(view_current_percent(guess, actual)) }
+        <> "%)",
+      ),
+      html.div(
+        [
+          attribute.style([#("background-color", rgb_display)]),
+          attribute.width(50),
+        ],
+        potential_win(guess, actual),
+      ),
+    ],
+  )
 }
 
 fn potential_win(guess: Color, actual: Color) -> List(Element(Msg)) {
@@ -273,7 +297,7 @@ fn get_color_rgb16(color: Color, basic_color: BasicColor) -> Int {
 fn text_class_for_background(color: Color) -> String {
   let assert Ok(dark_text_color) = colour.from_rgb(1.0, 1.0, 1.0)
   case accessibility.contrast_ratio(color, dark_text_color) >. 4.5 {
-    True -> "text-white"
+    True -> "text-slate-100"
     False -> "text-black"
   }
 }

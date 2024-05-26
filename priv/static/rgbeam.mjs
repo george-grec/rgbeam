@@ -8,10 +8,10 @@ var CustomType = class {
   }
 };
 var List = class {
-  static fromArray(array, tail) {
+  static fromArray(array3, tail) {
     let t = tail || new Empty();
-    for (let i = array.length - 1; i >= 0; --i) {
-      t = new NonEmpty(array[i], t);
+    for (let i = array3.length - 1; i >= 0; --i) {
+      t = new NonEmpty(array3[i], t);
     }
     return t;
   }
@@ -96,12 +96,12 @@ var BitArray = class _BitArray {
     return byteArrayToFloat(this.buffer.slice(index2, index2 + 8));
   }
   // @internal
-  intFromSlice(start3, end) {
-    return byteArrayToInt(this.buffer.slice(start3, end));
+  intFromSlice(start4, end) {
+    return byteArrayToInt(this.buffer.slice(start4, end));
   }
   // @internal
-  binaryFromSlice(start3, end) {
-    return new _BitArray(this.buffer.slice(start3, end));
+  binaryFromSlice(start4, end) {
+    return new _BitArray(this.buffer.slice(start4, end));
   }
   // @internal
   sliceAfter(index2) {
@@ -167,18 +167,18 @@ function isEqual(x, y) {
       } catch {
       }
     }
-    let [keys, get] = getters(a2);
-    for (let k of keys(a2)) {
-      values.push(get(a2, k), get(b, k));
+    let [keys2, get2] = getters(a2);
+    for (let k of keys2(a2)) {
+      values.push(get2(a2, k), get2(b, k));
     }
   }
   return true;
 }
-function getters(object) {
-  if (object instanceof Map) {
+function getters(object3) {
+  if (object3 instanceof Map) {
     return [(x) => x.keys(), (x, y) => x.get(y)];
   } else {
-    let extra = object instanceof globalThis.Error ? ["message"] : [];
+    let extra = object3 instanceof globalThis.Error ? ["message"] : [];
     return [(x) => [...extra, ...Object.keys(x)], (x, y) => x[y]];
   }
 }
@@ -306,8 +306,8 @@ function divide(a2, b) {
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/int.mjs
-function parse(string2) {
-  return parse_int(string2);
+function parse(string3) {
+  return parse_int(string3);
 }
 function to_string2(x) {
   return to_string(x);
@@ -429,25 +429,25 @@ function zip(list, other) {
 }
 function tail_recursive_range(loop$start, loop$stop, loop$acc) {
   while (true) {
-    let start3 = loop$start;
+    let start4 = loop$start;
     let stop = loop$stop;
     let acc = loop$acc;
-    let $ = compare(start3, stop);
+    let $ = compare(start4, stop);
     if ($ instanceof Eq) {
       return prepend(stop, acc);
     } else if ($ instanceof Gt) {
-      loop$start = start3;
+      loop$start = start4;
       loop$stop = stop + 1;
       loop$acc = prepend(stop, acc);
     } else {
-      loop$start = start3;
+      loop$start = start4;
       loop$stop = stop - 1;
       loop$acc = prepend(stop, acc);
     }
   }
 }
-function range(start3, stop) {
-  return tail_recursive_range(start3, stop, toList([]));
+function range(start4, stop) {
+  return tail_recursive_range(start4, stop, toList([]));
 }
 
 // build/dev/javascript/gleam_stdlib/gleam/result.mjs
@@ -656,9 +656,9 @@ function hashObject(o) {
       h = h + hashMerge(getHash(v), getHash(k)) | 0;
     });
   } else {
-    const keys = Object.keys(o);
-    for (let i = 0; i < keys.length; i++) {
-      const k = keys[i];
+    const keys2 = Object.keys(o);
+    for (let i = 0; i < keys2.length; i++) {
+      const k = keys2[i];
       const v = o[k];
       h = h + hashMerge(getHash(v), hashString(k)) | 0;
     }
@@ -781,36 +781,36 @@ function createNode(shift, key1, val1, key2hash, key2, val2) {
     addedLeaf
   );
 }
-function assoc(root, shift, hash, key, val, addedLeaf) {
-  switch (root.type) {
+function assoc(root2, shift, hash, key, val, addedLeaf) {
+  switch (root2.type) {
     case ARRAY_NODE:
-      return assocArray(root, shift, hash, key, val, addedLeaf);
+      return assocArray(root2, shift, hash, key, val, addedLeaf);
     case INDEX_NODE:
-      return assocIndex(root, shift, hash, key, val, addedLeaf);
+      return assocIndex(root2, shift, hash, key, val, addedLeaf);
     case COLLISION_NODE:
-      return assocCollision(root, shift, hash, key, val, addedLeaf);
+      return assocCollision(root2, shift, hash, key, val, addedLeaf);
   }
 }
-function assocArray(root, shift, hash, key, val, addedLeaf) {
+function assocArray(root2, shift, hash, key, val, addedLeaf) {
   const idx = mask(hash, shift);
-  const node = root.array[idx];
+  const node = root2.array[idx];
   if (node === void 0) {
     addedLeaf.val = true;
     return {
       type: ARRAY_NODE,
-      size: root.size + 1,
-      array: cloneAndSet(root.array, idx, { type: ENTRY, k: key, v: val })
+      size: root2.size + 1,
+      array: cloneAndSet(root2.array, idx, { type: ENTRY, k: key, v: val })
     };
   }
   if (node.type === ENTRY) {
     if (isEqual(key, node.k)) {
       if (val === node.v) {
-        return root;
+        return root2;
       }
       return {
         type: ARRAY_NODE,
-        size: root.size,
-        array: cloneAndSet(root.array, idx, {
+        size: root2.size,
+        array: cloneAndSet(root2.array, idx, {
           type: ENTRY,
           k: key,
           v: val
@@ -820,9 +820,9 @@ function assocArray(root, shift, hash, key, val, addedLeaf) {
     addedLeaf.val = true;
     return {
       type: ARRAY_NODE,
-      size: root.size,
+      size: root2.size,
       array: cloneAndSet(
-        root.array,
+        root2.array,
         idx,
         createNode(shift + SHIFT, node.k, node.v, hash, key, val)
       )
@@ -830,39 +830,39 @@ function assocArray(root, shift, hash, key, val, addedLeaf) {
   }
   const n = assoc(node, shift + SHIFT, hash, key, val, addedLeaf);
   if (n === node) {
-    return root;
+    return root2;
   }
   return {
     type: ARRAY_NODE,
-    size: root.size,
-    array: cloneAndSet(root.array, idx, n)
+    size: root2.size,
+    array: cloneAndSet(root2.array, idx, n)
   };
 }
-function assocIndex(root, shift, hash, key, val, addedLeaf) {
+function assocIndex(root2, shift, hash, key, val, addedLeaf) {
   const bit = bitpos(hash, shift);
-  const idx = index(root.bitmap, bit);
-  if ((root.bitmap & bit) !== 0) {
-    const node = root.array[idx];
+  const idx = index(root2.bitmap, bit);
+  if ((root2.bitmap & bit) !== 0) {
+    const node = root2.array[idx];
     if (node.type !== ENTRY) {
       const n = assoc(node, shift + SHIFT, hash, key, val, addedLeaf);
       if (n === node) {
-        return root;
+        return root2;
       }
       return {
         type: INDEX_NODE,
-        bitmap: root.bitmap,
-        array: cloneAndSet(root.array, idx, n)
+        bitmap: root2.bitmap,
+        array: cloneAndSet(root2.array, idx, n)
       };
     }
     const nodeKey = node.k;
     if (isEqual(key, nodeKey)) {
       if (val === node.v) {
-        return root;
+        return root2;
       }
       return {
         type: INDEX_NODE,
-        bitmap: root.bitmap,
-        array: cloneAndSet(root.array, idx, {
+        bitmap: root2.bitmap,
+        array: cloneAndSet(root2.array, idx, {
           type: ENTRY,
           k: key,
           v: val
@@ -872,24 +872,24 @@ function assocIndex(root, shift, hash, key, val, addedLeaf) {
     addedLeaf.val = true;
     return {
       type: INDEX_NODE,
-      bitmap: root.bitmap,
+      bitmap: root2.bitmap,
       array: cloneAndSet(
-        root.array,
+        root2.array,
         idx,
         createNode(shift + SHIFT, nodeKey, node.v, hash, key, val)
       )
     };
   } else {
-    const n = root.array.length;
+    const n = root2.array.length;
     if (n >= MAX_INDEX_NODE) {
       const nodes = new Array(32);
       const jdx = mask(hash, shift);
       nodes[jdx] = assocIndex(EMPTY, shift + SHIFT, hash, key, val, addedLeaf);
       let j = 0;
-      let bitmap = root.bitmap;
+      let bitmap = root2.bitmap;
       for (let i = 0; i < 32; i++) {
         if ((bitmap & 1) !== 0) {
-          const node = root.array[j++];
+          const node = root2.array[j++];
           nodes[i] = node;
         }
         bitmap = bitmap >>> 1;
@@ -900,7 +900,7 @@ function assocIndex(root, shift, hash, key, val, addedLeaf) {
         array: nodes
       };
     } else {
-      const newArray = spliceIn(root.array, idx, {
+      const newArray = spliceIn(root2.array, idx, {
         type: ENTRY,
         k: key,
         v: val
@@ -908,39 +908,39 @@ function assocIndex(root, shift, hash, key, val, addedLeaf) {
       addedLeaf.val = true;
       return {
         type: INDEX_NODE,
-        bitmap: root.bitmap | bit,
+        bitmap: root2.bitmap | bit,
         array: newArray
       };
     }
   }
 }
-function assocCollision(root, shift, hash, key, val, addedLeaf) {
-  if (hash === root.hash) {
-    const idx = collisionIndexOf(root, key);
+function assocCollision(root2, shift, hash, key, val, addedLeaf) {
+  if (hash === root2.hash) {
+    const idx = collisionIndexOf(root2, key);
     if (idx !== -1) {
-      const entry = root.array[idx];
+      const entry = root2.array[idx];
       if (entry.v === val) {
-        return root;
+        return root2;
       }
       return {
         type: COLLISION_NODE,
         hash,
-        array: cloneAndSet(root.array, idx, { type: ENTRY, k: key, v: val })
+        array: cloneAndSet(root2.array, idx, { type: ENTRY, k: key, v: val })
       };
     }
-    const size = root.array.length;
+    const size = root2.array.length;
     addedLeaf.val = true;
     return {
       type: COLLISION_NODE,
       hash,
-      array: cloneAndSet(root.array, size, { type: ENTRY, k: key, v: val })
+      array: cloneAndSet(root2.array, size, { type: ENTRY, k: key, v: val })
     };
   }
   return assoc(
     {
       type: INDEX_NODE,
-      bitmap: bitpos(root.hash, shift),
-      array: [root]
+      bitmap: bitpos(root2.hash, shift),
+      array: [root2]
     },
     shift,
     hash,
@@ -949,28 +949,28 @@ function assocCollision(root, shift, hash, key, val, addedLeaf) {
     addedLeaf
   );
 }
-function collisionIndexOf(root, key) {
-  const size = root.array.length;
+function collisionIndexOf(root2, key) {
+  const size = root2.array.length;
   for (let i = 0; i < size; i++) {
-    if (isEqual(key, root.array[i].k)) {
+    if (isEqual(key, root2.array[i].k)) {
       return i;
     }
   }
   return -1;
 }
-function find(root, shift, hash, key) {
-  switch (root.type) {
+function find(root2, shift, hash, key) {
+  switch (root2.type) {
     case ARRAY_NODE:
-      return findArray(root, shift, hash, key);
+      return findArray(root2, shift, hash, key);
     case INDEX_NODE:
-      return findIndex(root, shift, hash, key);
+      return findIndex(root2, shift, hash, key);
     case COLLISION_NODE:
-      return findCollision(root, key);
+      return findCollision(root2, key);
   }
 }
-function findArray(root, shift, hash, key) {
+function findArray(root2, shift, hash, key) {
   const idx = mask(hash, shift);
-  const node = root.array[idx];
+  const node = root2.array[idx];
   if (node === void 0) {
     return void 0;
   }
@@ -982,13 +982,13 @@ function findArray(root, shift, hash, key) {
   }
   return void 0;
 }
-function findIndex(root, shift, hash, key) {
+function findIndex(root2, shift, hash, key) {
   const bit = bitpos(hash, shift);
-  if ((root.bitmap & bit) === 0) {
+  if ((root2.bitmap & bit) === 0) {
     return void 0;
   }
-  const idx = index(root.bitmap, bit);
-  const node = root.array[idx];
+  const idx = index(root2.bitmap, bit);
+  const node = root2.array[idx];
   if (node.type !== ENTRY) {
     return find(node, shift + SHIFT, hash, key);
   }
@@ -997,44 +997,44 @@ function findIndex(root, shift, hash, key) {
   }
   return void 0;
 }
-function findCollision(root, key) {
-  const idx = collisionIndexOf(root, key);
+function findCollision(root2, key) {
+  const idx = collisionIndexOf(root2, key);
   if (idx < 0) {
     return void 0;
   }
-  return root.array[idx];
+  return root2.array[idx];
 }
-function without(root, shift, hash, key) {
-  switch (root.type) {
+function without(root2, shift, hash, key) {
+  switch (root2.type) {
     case ARRAY_NODE:
-      return withoutArray(root, shift, hash, key);
+      return withoutArray(root2, shift, hash, key);
     case INDEX_NODE:
-      return withoutIndex(root, shift, hash, key);
+      return withoutIndex(root2, shift, hash, key);
     case COLLISION_NODE:
-      return withoutCollision(root, key);
+      return withoutCollision(root2, key);
   }
 }
-function withoutArray(root, shift, hash, key) {
+function withoutArray(root2, shift, hash, key) {
   const idx = mask(hash, shift);
-  const node = root.array[idx];
+  const node = root2.array[idx];
   if (node === void 0) {
-    return root;
+    return root2;
   }
   let n = void 0;
   if (node.type === ENTRY) {
     if (!isEqual(node.k, key)) {
-      return root;
+      return root2;
     }
   } else {
     n = without(node, shift + SHIFT, hash, key);
     if (n === node) {
-      return root;
+      return root2;
     }
   }
   if (n === void 0) {
-    if (root.size <= MIN_ARRAY_NODE) {
-      const arr = root.array;
-      const out = new Array(root.size - 1);
+    if (root2.size <= MIN_ARRAY_NODE) {
+      const arr = root2.array;
+      const out = new Array(root2.size - 1);
       let i = 0;
       let j = 0;
       let bitmap = 0;
@@ -1065,75 +1065,75 @@ function withoutArray(root, shift, hash, key) {
     }
     return {
       type: ARRAY_NODE,
-      size: root.size - 1,
-      array: cloneAndSet(root.array, idx, n)
+      size: root2.size - 1,
+      array: cloneAndSet(root2.array, idx, n)
     };
   }
   return {
     type: ARRAY_NODE,
-    size: root.size,
-    array: cloneAndSet(root.array, idx, n)
+    size: root2.size,
+    array: cloneAndSet(root2.array, idx, n)
   };
 }
-function withoutIndex(root, shift, hash, key) {
+function withoutIndex(root2, shift, hash, key) {
   const bit = bitpos(hash, shift);
-  if ((root.bitmap & bit) === 0) {
-    return root;
+  if ((root2.bitmap & bit) === 0) {
+    return root2;
   }
-  const idx = index(root.bitmap, bit);
-  const node = root.array[idx];
+  const idx = index(root2.bitmap, bit);
+  const node = root2.array[idx];
   if (node.type !== ENTRY) {
     const n = without(node, shift + SHIFT, hash, key);
     if (n === node) {
-      return root;
+      return root2;
     }
     if (n !== void 0) {
       return {
         type: INDEX_NODE,
-        bitmap: root.bitmap,
-        array: cloneAndSet(root.array, idx, n)
+        bitmap: root2.bitmap,
+        array: cloneAndSet(root2.array, idx, n)
       };
     }
-    if (root.bitmap === bit) {
+    if (root2.bitmap === bit) {
       return void 0;
     }
     return {
       type: INDEX_NODE,
-      bitmap: root.bitmap ^ bit,
-      array: spliceOut(root.array, idx)
+      bitmap: root2.bitmap ^ bit,
+      array: spliceOut(root2.array, idx)
     };
   }
   if (isEqual(key, node.k)) {
-    if (root.bitmap === bit) {
+    if (root2.bitmap === bit) {
       return void 0;
     }
     return {
       type: INDEX_NODE,
-      bitmap: root.bitmap ^ bit,
-      array: spliceOut(root.array, idx)
+      bitmap: root2.bitmap ^ bit,
+      array: spliceOut(root2.array, idx)
     };
   }
-  return root;
+  return root2;
 }
-function withoutCollision(root, key) {
-  const idx = collisionIndexOf(root, key);
+function withoutCollision(root2, key) {
+  const idx = collisionIndexOf(root2, key);
   if (idx < 0) {
-    return root;
+    return root2;
   }
-  if (root.array.length === 1) {
+  if (root2.array.length === 1) {
     return void 0;
   }
   return {
     type: COLLISION_NODE,
-    hash: root.hash,
-    array: spliceOut(root.array, idx)
+    hash: root2.hash,
+    array: spliceOut(root2.array, idx)
   };
 }
-function forEach(root, fn) {
-  if (root === void 0) {
+function forEach(root2, fn) {
+  if (root2 === void 0) {
     return;
   }
-  const items = root.array;
+  const items = root2.array;
   const size = items.length;
   for (let i = 0; i < size; i++) {
     const item = items[i];
@@ -1154,10 +1154,10 @@ var Dict = class _Dict {
    * @returns {Dict<string,V>}
    */
   static fromObject(o) {
-    const keys = Object.keys(o);
+    const keys2 = Object.keys(o);
     let m = _Dict.new();
-    for (let i = 0; i < keys.length; i++) {
-      const k = keys[i];
+    for (let i = 0; i < keys2.length; i++) {
+      const k = keys2[i];
       m = m.set(k, o[k]);
     }
     return m;
@@ -1181,8 +1181,8 @@ var Dict = class _Dict {
    * @param {undefined | Node<K,V>} root
    * @param {number} size
    */
-  constructor(root, size) {
-    this.root = root;
+  constructor(root2, size) {
+    this.root = root2;
     this.size = size;
   }
   /**
@@ -1208,8 +1208,8 @@ var Dict = class _Dict {
    */
   set(key, val) {
     const addedLeaf = { val: false };
-    const root = this.root === void 0 ? EMPTY : this.root;
-    const newRoot = assoc(root, 0, getHash(key), key, val, addedLeaf);
+    const root2 = this.root === void 0 ? EMPTY : this.root;
+    const newRoot = assoc(root2, 0, getHash(key), key, val, addedLeaf);
     if (newRoot === this.root) {
       return this;
     }
@@ -1299,8 +1299,8 @@ function parse_int(value3) {
 function to_string(term) {
   return term.toString();
 }
-function int_to_base_string(int2, base) {
-  return int2.toString(base).toUpperCase();
+function int_to_base_string(int3, base) {
+  return int3.toString(base).toUpperCase();
 }
 function concat(xs) {
   let result = "";
@@ -1309,17 +1309,17 @@ function concat(xs) {
   }
   return result;
 }
-function ceiling(float2) {
-  return Math.ceil(float2);
+function ceiling(float3) {
+  return Math.ceil(float3);
 }
-function floor(float2) {
-  return Math.floor(float2);
+function floor(float3) {
+  return Math.floor(float3);
 }
-function round(float2) {
-  return Math.round(float2);
+function round(float3) {
+  return Math.round(float3);
 }
-function truncate(float2) {
-  return Math.trunc(float2);
+function truncate(float3) {
+  return Math.trunc(float3);
 }
 function power(base, exponent) {
   return Math.pow(base, exponent);
@@ -1331,8 +1331,8 @@ function random_uniform() {
   }
   return random_uniform_result;
 }
-function map_get(map3, key) {
-  const value3 = map3.get(key, NOT_FOUND);
+function map_get(map4, key) {
+  const value3 = map4.get(key, NOT_FOUND);
   if (value3 === NOT_FOUND) {
     return new Error(Nil);
   }
@@ -1849,6 +1849,9 @@ function min2(val) {
 function step(val) {
   return attribute("step", val);
 }
+function href(uri) {
+  return attribute("href", uri);
+}
 function width(val) {
   return property("width", val);
 }
@@ -2080,25 +2083,25 @@ function createElementNode({ prev, next, dispatch, stack }) {
   return el2;
 }
 var registeredHandlers = /* @__PURE__ */ new WeakMap();
-function lustreGenericEventHandler(event) {
-  const target = event.currentTarget;
+function lustreGenericEventHandler(event2) {
+  const target = event2.currentTarget;
   if (!registeredHandlers.has(target)) {
-    target.removeEventListener(event.type, lustreGenericEventHandler);
+    target.removeEventListener(event2.type, lustreGenericEventHandler);
     return;
   }
   const handlersForEventTarget = registeredHandlers.get(target);
-  if (!handlersForEventTarget.has(event.type)) {
-    target.removeEventListener(event.type, lustreGenericEventHandler);
+  if (!handlersForEventTarget.has(event2.type)) {
+    target.removeEventListener(event2.type, lustreGenericEventHandler);
     return;
   }
-  handlersForEventTarget.get(event.type)(event);
+  handlersForEventTarget.get(event2.type)(event2);
 }
-function lustreServerEventHandler(event) {
-  const el2 = event.target;
-  const tag = el2.getAttribute(`data-lustre-on-${event.type}`);
+function lustreServerEventHandler(event2) {
+  const el2 = event2.target;
+  const tag = el2.getAttribute(`data-lustre-on-${event2.type}`);
   const data = JSON.parse(el2.getAttribute("data-lustre-data") || "{}");
   const include = JSON.parse(el2.getAttribute("data-lustre-include") || "[]");
-  switch (event.type) {
+  switch (event2.type) {
     case "input":
     case "change":
       include.push("target.value");
@@ -2109,7 +2112,7 @@ function lustreServerEventHandler(event) {
     data: include.reduce(
       (data2, property2) => {
         const path = property2.split(".");
-        for (let i = 0, o = data2, e = event; i < path.length; i++) {
+        for (let i = 0, o = data2, e = event2; i < path.length; i++) {
           if (i === path.length - 1) {
             o[path[i]] = e[path[i]];
           } else {
@@ -2187,7 +2190,7 @@ function iterateElement(element2, processElement) {
 }
 
 // build/dev/javascript/lustre/client-runtime.ffi.mjs
-var LustreClientApplication = class _LustreClientApplication {
+var LustreClientApplication2 = class _LustreClientApplication {
   #root = null;
   #queue = [];
   #effects = [];
@@ -2196,20 +2199,20 @@ var LustreClientApplication = class _LustreClientApplication {
   #model = null;
   #update = null;
   #view = null;
-  static start(flags, selector, init2, update2, view2) {
+  static start(flags, selector, init3, update3, view2) {
     if (!is_browser())
       return new Error(new NotABrowser());
-    const root = selector instanceof HTMLElement ? selector : document.querySelector(selector);
-    if (!root)
+    const root2 = selector instanceof HTMLElement ? selector : document.querySelector(selector);
+    if (!root2)
       return new Error(new ElementNotFound(selector));
-    const app = new _LustreClientApplication(init2(flags), update2, view2, root);
+    const app = new _LustreClientApplication(init3(flags), update3, view2, root2);
     return new Ok((msg) => app.send(msg));
   }
-  constructor([model, effects], update2, view2, root = document.body, isComponent = false) {
+  constructor([model, effects], update3, view2, root2 = document.body, isComponent = false) {
     this.#model = model;
-    this.#update = update2;
+    this.#update = update3;
     this.#view = view2;
-    this.#root = root;
+    this.#root = root2;
     this.#effects = effects.all.toArray();
     this.#didUpdate = true;
     this.#isComponent = isComponent;
@@ -2234,9 +2237,9 @@ var LustreClientApplication = class _LustreClientApplication {
         return;
     }
   }
-  emit(event, data) {
+  emit(event2, data) {
     this.#root.dispatchEvent(
-      new CustomEvent(event, {
+      new CustomEvent(event2, {
         bubbles: true,
         detail: data,
         composed: true
@@ -2265,7 +2268,7 @@ var LustreClientApplication = class _LustreClientApplication {
     while (this.#effects.length) {
       this.#effects.shift()(
         (msg) => this.send(new Dispatch(msg)),
-        (event, data) => this.emit(event, data)
+        (event2, data) => this.emit(event2, data)
       );
     }
     if (this.#queue.length) {
@@ -2306,7 +2309,7 @@ var LustreClientApplication = class _LustreClientApplication {
     };
   }
 };
-var start = (app, selector, flags) => LustreClientApplication.start(
+var start = (app, selector, flags) => LustreClientApplication2.start(
   flags,
   selector,
   app.init,
@@ -2317,10 +2320,10 @@ var is_browser = () => window && window.document;
 
 // build/dev/javascript/lustre/lustre.mjs
 var App = class extends CustomType {
-  constructor(init2, update2, view2, on_attribute_change) {
+  constructor(init3, update3, view2, on_attribute_change) {
     super();
-    this.init = init2;
-    this.update = update2;
+    this.init = init3;
+    this.update = update3;
     this.view = view2;
     this.on_attribute_change = on_attribute_change;
   }
@@ -2333,10 +2336,10 @@ var ElementNotFound = class extends CustomType {
 };
 var NotABrowser = class extends CustomType {
 };
-function application(init2, update2, view2) {
-  return new App(init2, update2, view2, new None());
+function application(init3, update3, view2) {
+  return new App(init3, update3, view2, new None());
 }
-function start2(app, selector, flags) {
+function start3(app, selector, flags) {
   return guard(
     !is_browser(),
     new Error(new NotABrowser()),
@@ -2359,6 +2362,9 @@ function h1(attrs, children) {
 function div(attrs, children) {
   return element("div", attrs, children);
 }
+function a(attrs, children) {
+  return element("a", attrs, children);
+}
 function span(attrs, children) {
   return element("span", attrs, children);
 }
@@ -2378,8 +2384,8 @@ function on_click(msg) {
     return new Ok(msg);
   });
 }
-function value2(event) {
-  let _pipe = event;
+function value2(event2) {
+  let _pipe = event2;
   return field("target", field("value", string))(
     _pipe
   );
@@ -2387,8 +2393,8 @@ function value2(event) {
 function on_input(msg) {
   return on2(
     "input",
-    (event) => {
-      let _pipe = value2(event);
+    (event2) => {
+      let _pipe = value2(event2);
       return map2(_pipe, msg);
     }
   );
@@ -2444,7 +2450,7 @@ function random_color() {
     random_color_255()
   );
 }
-function init(_) {
+function init2(_) {
   return [
     new Model(
       random_color(),
@@ -2454,17 +2460,34 @@ function init(_) {
     none()
   ];
 }
+function view_navbar() {
+  return div(
+    toList([class$("self-start text-3xl lg:text-base m-10 lg:m-5")]),
+    toList([
+      a(
+        toList([href("https://susam.net/myrgb.html")]),
+        toList([text2("Original")])
+      ),
+      text2(", "),
+      a(
+        toList([href("https://github.com/george-grec/rgbeam")]),
+        toList([text2("Github")])
+      )
+    ])
+  );
+}
 function view_slider(color_value, on_input2, accent_color) {
   return input(
     toList([
       type_("range"),
       min2("0"),
       max2("15"),
-      width(50),
       value(to_string2(color_value)),
       step("1"),
       style(toList([["accent-color", accent_color]])),
-      class$("m-2 shrink-0 text-center rounded-lg cursor-pointer"),
+      class$(
+        "mt-10 lg:mt-5 shrink-0 text-center rounded-lg cursor-pointer w-full"
+      ),
       on_input(on_input2)
     ])
   );
@@ -2540,7 +2563,7 @@ function view_basic_color(color, basic_color) {
     throw makeError(
       "assignment_no_match",
       "rgbeam",
-      155,
+      156,
       "view_basic_color",
       "Assignment pattern did not match",
       { value: $1 }
@@ -2549,14 +2572,85 @@ function view_basic_color(color, basic_color) {
   let new_color = $1[0];
   return view_color(new_color);
 }
+function view_submit_button(current_guess) {
+  return button(
+    toList([
+      class$(
+        "\n        text-slate-100 text-center text-4xl lg:text-lg m-5 lg:mg-0 p-5 lg:p-2 b-0 block rounded-lg\n        bg-[length:auto_200%] bg-left min-w-80 lg:min-w-48\n        bg-gradient-to-r from-sky-950 to-cyan-600 duration-500 hover:bg-right\n        hover:bg-gray hover:no-underline"
+      ),
+      on_click(new UserGuessed())
+    ]),
+    toList([text("Submit " + view_color(current_guess))])
+  );
+}
+function text_class_for_background(color) {
+  let $ = from_rgb(1, 1, 1);
+  if (!$.isOk()) {
+    throw makeError(
+      "assignment_no_match",
+      "rgbeam",
+      298,
+      "text_class_for_background",
+      "Assignment pattern did not match",
+      { value: $ }
+    );
+  }
+  let dark_text_color = $[0];
+  let $1 = contrast_ratio(color, dark_text_color) > 4.5;
+  if ($1) {
+    return "text-slate-100";
+  } else {
+    return "text-black";
+  }
+}
+function view_title(actual) {
+  return h1(
+    toList([
+      class$(
+        text_class_for_background(actual) + " text-8xl lg:text-3xl font-bold text-center mt-[20%] lg:mt-[5%] mg-5 p-5"
+      )
+    ]),
+    toList([
+      text2("Guess this "),
+      span(
+        toList([class$("rgb")]),
+        toList([text2("RGB")])
+      ),
+      text2("!")
+    ])
+  );
+}
+function view_slider_label(actual) {
+  return div(
+    toList([
+      class$(
+        "flex flex-row justify-between " + text_class_for_background(actual)
+      )
+    ]),
+    (() => {
+      let _pipe = range(0, 15);
+      let _pipe$1 = map(_pipe, to_base16);
+      return map(
+        _pipe$1,
+        (x) => {
+          return span(
+            toList([class$("text-3xl lg:text-base")]),
+            toList([text2(x)])
+          );
+        }
+      );
+    })()
+  );
+}
 function view_slider_component(model) {
   return div(
     toList([
       class$(
-        "flex flex-col align-center justify-center min-w-full p-10 lg:min-w-[50%]"
+        "mx-20 px-20 flex flex-col align-center justify-center min-w-full py-10 lg:py-0 lg:min-w-[50%]"
       )
     ]),
     toList([
+      view_slider_label(model.actual),
       view_slider(
         get_color_rgb16(model.current_guess, new Red()),
         (_capture) => {
@@ -2581,28 +2675,27 @@ function view_slider_component(model) {
     ])
   );
 }
-function view_submit_button(current_guess) {
-  return button(
-    toList([
-      class$(
-        "\n        text-white text-center text-4xl lg:text-lg m-5 p-5 b-0 block rounded-lg bg-[length:auto_200%] bg-left\n        bg-gradient-to-r from-sky-950 to-cyan-600 duration-500 hover:bg-right\n        hover:bg-gray hover:no-underline min-w-80"
-      ),
-      on_click(new UserGuessed())
-    ]),
-    toList([text("Submit " + view_color(current_guess))])
-  );
-}
 function view_guess(guess_with_count, actual) {
   let guess = guess_with_count[0];
   let index2 = guess_with_count[1];
   let rgb_display = view_color(guess);
   return div(
-    toList([]),
+    toList([
+      class$(
+        "text-4xl lg:text-base mt-5 " + text_class_for_background(actual)
+      )
+    ]),
     toList([
       text2(to_string2(index2) + ") "),
-      text2(rgb_display + " "),
+      span(
+        toList([
+          style(toList([["background", rgb_display]])),
+          class$(text_class_for_background(guess))
+        ]),
+        toList([text2(" " + rgb_display + " ")])
+      ),
       text2(
-        "(Accuracy: " + to_string2(view_current_percent(guess, actual)) + "%)"
+        " (Accuracy: " + to_string2(view_current_percent(guess, actual)) + "%)"
       ),
       div(
         toList([
@@ -2631,43 +2724,6 @@ function view_guesses(model) {
     })()
   );
 }
-function text_class_for_background(color) {
-  let $ = from_rgb(1, 1, 1);
-  if (!$.isOk()) {
-    throw makeError(
-      "assignment_no_match",
-      "rgbeam",
-      274,
-      "text_class_for_background",
-      "Assignment pattern did not match",
-      { value: $ }
-    );
-  }
-  let dark_text_color = $[0];
-  let $1 = contrast_ratio(color, dark_text_color) > 4.5;
-  if ($1) {
-    return "text-white";
-  } else {
-    return "text-black";
-  }
-}
-function view_title(actual) {
-  return h1(
-    toList([
-      class$(
-        text_class_for_background(actual) + " text-8xl lg:text-5xl font-bold text-center mt-[20%] mg-5 p-5"
-      )
-    ]),
-    toList([
-      text2("Guess this "),
-      span(
-        toList([class$("rgb text-8xl lg:text-5xl font-bold")]),
-        toList([text2("RGB")])
-      ),
-      text2("!")
-    ])
-  );
-}
 function view(model) {
   return body(
     toList([
@@ -2677,6 +2733,7 @@ function view(model) {
       )
     ]),
     toList([
+      view_navbar(),
       view_title(model.actual),
       view_slider_component(model),
       view_submit_button(model.current_guess),
@@ -2708,7 +2765,7 @@ function parse_color(raw_value, basic_color, current_color) {
         throw makeError(
           "assignment_no_match",
           "rgbeam",
-          315,
+          339,
           "",
           "Assignment pattern did not match",
           { value: $1 }
@@ -2720,7 +2777,7 @@ function parse_color(raw_value, basic_color, current_color) {
   );
   return unwrap(_pipe$1, current_color);
 }
-function update(model, msg) {
+function update2(model, msg) {
   if (msg instanceof UserChangedColor) {
     let new_color = msg[0];
     let color_type = msg[1];
@@ -2740,8 +2797,8 @@ function update(model, msg) {
   }
 }
 function main() {
-  let app = application(init, update, view);
-  let $ = start2(app, "body", void 0);
+  let app = application(init2, update2, view);
+  let $ = start3(app, "body", void 0);
   if (!$.isOk()) {
     throw makeError(
       "assignment_no_match",
